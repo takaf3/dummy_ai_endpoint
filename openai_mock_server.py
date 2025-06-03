@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import asyncio
 import json
 import logging
@@ -7,10 +8,13 @@ import time
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
+from queue import Queue
+import threading
 
 import uvicorn
-from fastapi import FastAPI, Request, Response
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 # Configure logging
@@ -25,6 +29,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="OpenAI API Mock Server")
+
+# Global state
+pending_requests = {}
+websocket_clients = []
+response_mode = "cli"  # "cli" or "web"
 
 # Request/Response Models (matching OpenAI's structure)
 class ChatCompletionMessage(BaseModel):
@@ -83,7 +92,7 @@ def log_request(endpoint: str, request_data: Dict[str, Any]):
     with open('request_log.json', 'a') as f:
         f.write(json.dumps(log_entry) + '\n')
 
-def get_user_response(prompt_info: str) -> str:
+def get_cli_response(prompt_info: str) -> str:
     """Get response from user via terminal"""
     print("\n" + "="*80)
     print("INTERCEPTED REQUEST - Please provide response")
@@ -101,9 +110,79 @@ def get_user_response(prompt_info: str) -> str:
     
     return '\n'.join(lines)
 
+async def get_web_response(request_id: str, request_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Get response from web UI"""
+    # Store request in pending
+    pending_requests[request_id] = {
+        "data": request_data,
+        "response": None,
+        "event": asyncio.Event()
+    }
+    
+    # Notify all connected WebSocket clients
+    message = {
+        "type": "new_request",
+        "request": {
+            "id": request_id,
+            "endpoint": request_data["endpoint"],
+            "data": request_data["data"]
+        }
+    }
+    
+    disconnected_clients = []
+    for client in websocket_clients:
+        try:
+            await client.send_json(message)
+        except:
+            disconnected_clients.append(client)
+    
+    # Remove disconnected clients
+    for client in disconnected_clients:
+        websocket_clients.remove(client)
+    
+    # Wait for response
+    await pending_requests[request_id]["event"].wait()
+    
+    response = pending_requests[request_id]["response"]
+    del pending_requests[request_id]
+    
+    return response
+
 def count_tokens(text: str) -> int:
     """Simple token counter (approximation)"""
-    return len(text.split()) * 1.3  # Rough approximation
+    return int(len(text.split()) * 1.3)  # Rough approximation
+
+async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: bool) -> Any:
+    """Handle request with appropriate response mode"""
+    # Create prompt info for display
+    prompt_info = f"Model: {request_data.get('model', 'unknown')}\n"
+    prompt_info += f"Temperature: {request_data.get('temperature', 1.0)}\n"
+    prompt_info += f"Max Tokens: {request_data.get('max_tokens', 'None')}\n"
+    prompt_info += f"Stream: {stream}\n"
+    
+    if "messages" in request_data:
+        prompt_info += "\nMessages:\n"
+        for msg in request_data["messages"]:
+            prompt_info += f"[{msg['role']}]: {msg['content']}\n"
+    elif "prompt" in request_data:
+        prompt_info += f"\nPrompt: {request_data['prompt']}\n"
+    
+    # Get response based on mode
+    if response_mode == "cli":
+        user_response = get_cli_response(prompt_info)
+    else:
+        request_id = str(uuid.uuid4())
+        web_response = await get_web_response(request_id, {
+            "endpoint": endpoint,
+            "data": request_data
+        })
+        
+        if web_response.get("type") == "error":
+            raise Exception(web_response.get("message", "Unknown error"))
+        
+        user_response = web_response.get("response", "")
+    
+    return user_response
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: ChatCompletionRequest, raw_request: Request):
@@ -111,17 +190,14 @@ async def chat_completions(request: ChatCompletionRequest, raw_request: Request)
     request_dict = request.dict()
     log_request("/v1/chat/completions", request_dict)
     
-    # Create prompt info for display
-    prompt_info = f"Model: {request.model}\n"
-    prompt_info += f"Temperature: {request.temperature}\n"
-    prompt_info += f"Max Tokens: {request.max_tokens}\n"
-    prompt_info += f"Stream: {request.stream}\n"
-    prompt_info += "\nMessages:\n"
-    for msg in request.messages:
-        prompt_info += f"[{msg.role}]: {msg.content}\n"
-    
-    # Get user response
-    user_response = get_user_response(prompt_info)
+    try:
+        user_response = await handle_request("/v1/chat/completions", request_dict, request.stream)
+    except Exception as e:
+        return Response(
+            content=json.dumps({"error": {"message": str(e), "type": "server_error"}}),
+            status_code=500,
+            media_type="application/json"
+        )
     
     # Calculate token usage
     prompt_tokens = sum(count_tokens(msg.content) for msg in request.messages)
@@ -210,15 +286,14 @@ async def completions(request: CompletionRequest, raw_request: Request):
     request_dict = request.dict()
     log_request("/v1/completions", request_dict)
     
-    # Create prompt info for display
-    prompt_info = f"Model: {request.model}\n"
-    prompt_info += f"Temperature: {request.temperature}\n"
-    prompt_info += f"Max Tokens: {request.max_tokens}\n"
-    prompt_info += f"Stream: {request.stream}\n"
-    prompt_info += f"\nPrompt: {request.prompt}\n"
-    
-    # Get user response
-    user_response = get_user_response(prompt_info)
+    try:
+        user_response = await handle_request("/v1/completions", request_dict, request.stream)
+    except Exception as e:
+        return Response(
+            content=json.dumps({"error": {"message": str(e), "type": "server_error"}}),
+            status_code=500,
+            media_type="application/json"
+        )
     
     # Calculate token usage
     prompt_text = request.prompt if isinstance(request.prompt, str) else str(request.prompt)
@@ -229,13 +304,11 @@ async def completions(request: CompletionRequest, raw_request: Request):
         # Streaming response
         async def generate_stream():
             words = user_response.split()
-            text_so_far = ""
             
             for i in range(0, len(words), 3):  # Send 3 words at a time
                 chunk_content = ' '.join(words[i:i+3])
                 if i + 3 < len(words):
                     chunk_content += ' '
-                text_so_far += chunk_content
                 
                 chunk = {
                     "id": f"cmpl-{uuid.uuid4().hex[:8]}",
@@ -320,25 +393,83 @@ async def list_models():
 @app.get("/")
 async def root():
     """Root endpoint"""
-    return {
-        "message": "OpenAI API Mock Server",
-        "endpoints": [
-            "/v1/chat/completions",
-            "/v1/completions",
-            "/v1/models"
-        ]
-    }
+    if response_mode == "web":
+        # Redirect to web UI
+        return HTMLResponse(content=open("static/index.html", "r").read())
+    else:
+        return {
+            "message": "OpenAI API Mock Server",
+            "endpoints": [
+                "/v1/chat/completions",
+                "/v1/completions",
+                "/v1/models"
+            ],
+            "mode": response_mode
+        }
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time communication with web UI"""
+    await websocket.accept()
+    websocket_clients.append(websocket)
+    
+    try:
+        while True:
+            data = await websocket.receive_json()
+            
+            if data["type"] == "response" and data["request_id"] in pending_requests:
+                # Store the response
+                pending_requests[data["request_id"]]["response"] = {
+                    "type": "success",
+                    "response": data["response"],
+                    "stream": data.get("stream", False)
+                }
+                # Signal that response is ready
+                pending_requests[data["request_id"]]["event"].set()
+            
+            elif data["type"] == "error" and data["request_id"] in pending_requests:
+                # Store the error
+                pending_requests[data["request_id"]]["response"] = {
+                    "type": "error",
+                    "message": data.get("message", "Unknown error")
+                }
+                # Signal that response is ready
+                pending_requests[data["request_id"]]["event"].set()
+    
+    except WebSocketDisconnect:
+        websocket_clients.remove(websocket)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="OpenAI API Mock Server")
+    parser.add_argument("--mode", choices=["cli", "web"], default="cli",
+                        help="Response mode: 'cli' for terminal input, 'web' for web UI")
+    parser.add_argument("--port", type=int, default=8000,
+                        help="Port to run the server on")
+    parser.add_argument("--host", default="0.0.0.0",
+                        help="Host to bind the server to")
+    
+    args = parser.parse_args()
+    response_mode = args.mode
+    
     print("\n" + "="*80)
     print("OpenAI API Mock Server")
     print("="*80)
-    print("This server mimics the OpenAI API for debugging purposes.")
+    print(f"Mode: {response_mode.upper()}")
+    print(f"Server: http://localhost:{args.port}")
+    if response_mode == "web":
+        print(f"Web UI: http://localhost:{args.port}")
+    print("\nThis server mimics the OpenAI API for debugging purposes.")
     print("All requests will be logged to:")
     print("  - Console output")
     print("  - openai_mock_requests.log")
     print("  - request_log.json")
-    print("\nYou will be prompted to provide responses for each request.")
+    if response_mode == "cli":
+        print("\nYou will be prompted to provide responses for each request.")
+    else:
+        print("\nOpen the web UI to manage responses.")
     print("="*80 + "\n")
     
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=args.host, port=args.port)
