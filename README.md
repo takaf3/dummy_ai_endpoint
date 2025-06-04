@@ -1,4 +1,4 @@
-# OpenAI API Mock Server
+# dummy ai endpoint
 
 A debugging tool that mimics the OpenAI API, allowing you to intercept requests, log prompts, and manually control responses for testing LLM-powered applications.
 
@@ -24,8 +24,8 @@ Perfect for debugging applications where you don't have access to the source cod
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/openai-api-mock-server.git
-cd openai-api-mock-server
+git clone https://github.com/takaf3/dummy_ai_endpoint.git
+cd dummy_ai_endpoint
 
 # Install dependencies
 pip install -r requirements.txt
