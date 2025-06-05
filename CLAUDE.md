@@ -18,11 +18,11 @@ python dummy_ai_endpoint.py --port 9000 --host 127.0.0.1
 
 ### Testing the Server
 ```bash
-# Run the example client (requires server to be running)
-python example_client.py
-
 # Install dependencies
 pip install -r requirements.txt
+
+# Run the example client (requires server to be running)
+python example_client.py
 ```
 
 ## Architecture Overview

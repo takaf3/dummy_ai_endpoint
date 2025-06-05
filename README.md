@@ -6,7 +6,7 @@ Perfect for debugging applications where you don't have access to the source cod
 
 ## 🚀 Features
 
-- **Full OpenAI API compatibility**: Supports `/v1/chat/completions` and `/v1/completions` endpoints
+- **Enhanced OpenAI API compatibility**: Supports `/v1/chat/completions` and `/v1/completions` endpoints, accepting a wide range of official parameters (though not all functionalities are implemented).
 - **Request logging**: All requests are logged to console, file, and JSON format
 - **Interactive response control**: Manually input responses for each request
 - **Streaming support**: Supports both streaming and non-streaming responses
