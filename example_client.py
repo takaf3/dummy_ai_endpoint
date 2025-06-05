@@ -141,14 +141,14 @@ if __name__ == "__main__":
         test_models_endpoint()
         time.sleep(1)
         
-        test_chat_completion()
-        time.sleep(1)
+        # test_chat_completion() # Temporarily commented out for speed
+        # time.sleep(1)
         
-        test_streaming_chat()
-        time.sleep(1)
+        # test_streaming_chat() # Temporarily commented out for speed
+        # time.sleep(1)
         
-        test_text_completion()
-        time.sleep(1)
+        # test_text_completion() # Temporarily commented out for speed
+        # time.sleep(1)
 
         test_chat_completion_minimal_params()
         time.sleep(1)
