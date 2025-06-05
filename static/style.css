@@ -225,18 +225,22 @@ header p {
 }
 
 .history-item {
-    padding: 15px;
     border-bottom: 1px solid #e0e0e0;
-    cursor: pointer;
     transition: background 0.2s;
-}
-
-.history-item:hover {
-    background: #f8f9fa;
 }
 
 .history-item:last-child {
     border-bottom: none;
+}
+
+.history-header {
+    padding: 15px;
+    cursor: pointer;
+    position: relative;
+}
+
+.history-header:hover {
+    background: #f8f9fa;
 }
 
 .history-timestamp {
@@ -257,6 +261,99 @@ header p {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    padding-right: 30px;
+}
+
+.expand-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+
+.history-item.expanded .expand-icon {
+    transform: translateY(-50%) rotate(90deg);
+}
+
+.history-details {
+    padding: 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 500px;
+    }
+}
+
+.detail-section {
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.detail-section strong {
+    color: #555;
+    margin-right: 5px;
+}
+
+.messages-section {
+    margin-top: 15px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 15px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.message-detail {
+    margin-bottom: 10px;
+    padding: 8px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.message-detail:last-child {
+    margin-bottom: 0;
+}
+
+.message-role {
+    font-weight: 600;
+    color: #0066cc;
+}
+
+.message-content {
+    color: #333;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.prompt-section {
+    margin-top: 15px;
+}
+
+.prompt-content {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 5px;
+    max-height: 250px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 13px;
 }
 
 .no-history {
