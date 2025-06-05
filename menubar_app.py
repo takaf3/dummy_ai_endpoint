@@ -16,7 +16,7 @@ from pathlib import Path
 
 class DummyAIEndpointApp(rumps.App):
     def __init__(self):
-        super(DummyAIEndpointApp, self).__init__("AI Mock")
+        super(DummyAIEndpointApp, self).__init__("🤖")
         self.server_process = None
         self.server_mode = "web"  # Default to web mode
         self.server_port = 8000
@@ -35,10 +35,10 @@ class DummyAIEndpointApp(rumps.App):
     def update_status(self, _):
         """Update the server status in the menu"""
         if self.is_server_running():
-            self.title = "AI Mock ✅"
+            self.title = "🤖✅"
             self.menu["Start Server"].title = "Stop Server"
         else:
-            self.title = "AI Mock 🔴"
+            self.title = "🤖🔴"
             self.menu["Start Server"].title = "Start Server"
     
     def is_server_running(self):
