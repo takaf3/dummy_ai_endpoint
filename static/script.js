@@ -135,7 +135,9 @@ function addToHistory(request) {
         timestamp: new Date().toLocaleString(),
         endpoint: request.endpoint,
         model: request.data.model,
-        preview: getRequestPreview(request)
+        preview: getRequestPreview(request),
+        fullRequest: request,
+        expanded: false
     };
     
     requestHistory.unshift(historyItem);
@@ -162,19 +164,54 @@ function updateHistoryDisplay() {
     
     let html = '';
     requestHistory.forEach((item, index) => {
-        html += `<div class="history-item" onclick="viewHistoryItem(${index})">`;
+        const expandedClass = item.expanded ? 'expanded' : '';
+        html += `<div class="history-item ${expandedClass}" onclick="toggleHistoryItem(${index})">`;
+        html += `<div class="history-header">`;
         html += `<div class="history-timestamp">${item.timestamp}</div>`;
         html += `<div class="history-endpoint">${item.endpoint} - ${item.model}</div>`;
         html += `<div class="history-preview">${escapeHtml(item.preview)}</div>`;
+        html += `<div class="expand-icon">${item.expanded ? '▼' : '▶'}</div>`;
+        html += `</div>`;
+        
+        if (item.expanded) {
+            html += `<div class="history-details">`;
+            html += `<div class="detail-section">`;
+            html += `<strong>Request ID:</strong> ${item.fullRequest.id}<br>`;
+            html += `<strong>Model:</strong> ${item.fullRequest.data.model}<br>`;
+            html += `<strong>Temperature:</strong> ${item.fullRequest.data.temperature || 1.0}<br>`;
+            html += `<strong>Max Tokens:</strong> ${item.fullRequest.data.max_tokens || 'None'}<br>`;
+            html += `<strong>Stream:</strong> ${item.fullRequest.data.stream || false}<br>`;
+            
+            if (item.fullRequest.data.messages) {
+                html += `<div class="messages-section">`;
+                html += `<strong>Messages:</strong>`;
+                item.fullRequest.data.messages.forEach(msg => {
+                    html += `<div class="message-detail">`;
+                    html += `<span class="message-role">${msg.role}:</span> `;
+                    html += `<span class="message-content">${escapeHtml(msg.content)}</span>`;
+                    html += `</div>`;
+                });
+                html += `</div>`;
+            } else if (item.fullRequest.data.prompt) {
+                html += `<div class="prompt-section">`;
+                html += `<strong>Prompt:</strong>`;
+                html += `<pre class="prompt-content">${escapeHtml(item.fullRequest.data.prompt)}</pre>`;
+                html += `</div>`;
+            }
+            
+            html += `</div>`;
+            html += `</div>`;
+        }
+        
         html += `</div>`;
     });
     
     historyList.innerHTML = html;
 }
 
-function viewHistoryItem(index) {
-    // Could expand this to show full request details
-    console.log('View history item:', requestHistory[index]);
+function toggleHistoryItem(index) {
+    requestHistory[index].expanded = !requestHistory[index].expanded;
+    updateHistoryDisplay();
 }
 
 function escapeHtml(text) {
