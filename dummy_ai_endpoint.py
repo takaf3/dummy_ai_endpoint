@@ -44,14 +44,14 @@ class ChatCompletionMessage(BaseModel):
 class ChatCompletionRequest(BaseModel):
     model: str
     messages: List[ChatCompletionMessage]
-    temperature: Optional[float] = 1.0
-    top_p: Optional[float] = 1.0
-    n: Optional[int] = 1
-    stream: Optional[bool] = False
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    stream: Optional[bool] = None
     stop: Optional[Union[str, List[str]]] = None
     max_tokens: Optional[int] = None
-    presence_penalty: Optional[float] = 0
-    frequency_penalty: Optional[float] = 0
+    presence_penalty: Optional[float] = None
+    frequency_penalty: Optional[float] = None
     logit_bias: Optional[Dict[str, float]] = None
     user: Optional[str] = None
 
@@ -59,17 +59,17 @@ class CompletionRequest(BaseModel):
     model: str
     prompt: Union[str, List[str], List[int], List[List[int]]]
     suffix: Optional[str] = None
-    max_tokens: Optional[int] = 16
-    temperature: Optional[float] = 1.0
-    top_p: Optional[float] = 1.0
-    n: Optional[int] = 1
-    stream: Optional[bool] = False
+    max_tokens: Optional[int] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    n: Optional[int] = None
+    stream: Optional[bool] = None
     logprobs: Optional[int] = None
-    echo: Optional[bool] = False
+    echo: Optional[bool] = None
     stop: Optional[Union[str, List[str]]] = None
-    presence_penalty: Optional[float] = 0
-    frequency_penalty: Optional[float] = 0
-    best_of: Optional[int] = 1
+    presence_penalty: Optional[float] = None
+    frequency_penalty: Optional[float] = None
+    best_of: Optional[int] = None
     logit_bias: Optional[Dict[str, float]] = None
     user: Optional[str] = None
 
@@ -152,7 +152,7 @@ def count_tokens(text: str) -> int:
     """Simple token counter (approximation)"""
     return int(len(text.split()) * 1.3)  # Rough approximation
 
-async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: bool) -> Any:
+async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Optional[bool]) -> Any:
     """Handle request with appropriate response mode"""
     # Create prompt info for display
     prompt_info = f"Model: {request_data.get('model', 'unknown')}\n"
@@ -191,7 +191,8 @@ async def chat_completions(request: ChatCompletionRequest, raw_request: Request)
     log_request("/v1/chat/completions", request_dict)
     
     try:
-        user_response = await handle_request("/v1/chat/completions", request_dict, request.stream)
+        stream_param = request.stream if request.stream is not None else False
+        user_response = await handle_request("/v1/chat/completions", request_dict, stream_param)
     except Exception as e:
         return Response(
             content=json.dumps({"error": {"message": str(e), "type": "server_error"}}),
@@ -203,7 +204,7 @@ async def chat_completions(request: ChatCompletionRequest, raw_request: Request)
     prompt_tokens = sum(count_tokens(msg.content) for msg in request.messages)
     completion_tokens = count_tokens(user_response)
     
-    if request.stream:
+    if stream_param:
         # Streaming response
         async def generate_stream():
             # Send initial chunk
@@ -287,7 +288,8 @@ async def completions(request: CompletionRequest, raw_request: Request):
     log_request("/v1/completions", request_dict)
     
     try:
-        user_response = await handle_request("/v1/completions", request_dict, request.stream)
+        stream_param = request.stream if request.stream is not None else False
+        user_response = await handle_request("/v1/completions", request_dict, stream_param)
     except Exception as e:
         return Response(
             content=json.dumps({"error": {"message": str(e), "type": "server_error"}}),
@@ -300,7 +302,7 @@ async def completions(request: CompletionRequest, raw_request: Request):
     prompt_tokens = count_tokens(prompt_text)
     completion_tokens = count_tokens(user_response)
     
-    if request.stream:
+    if stream_param:
         # Streaming response
         async def generate_stream():
             words = user_response.split()

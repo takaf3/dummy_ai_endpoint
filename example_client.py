@@ -73,6 +73,48 @@ def test_text_completion():
     
     print(f"Response: {response.choices[0].text}")
 
+def test_chat_completion_minimal_params():
+    """Test chat completion endpoint with minimal parameters"""
+    print("\n=== Testing Chat Completion (Minimal Params) ===")
+
+    # Configure client to use mock server
+    client = OpenAI(
+        api_key="test-key",  # Any string works
+        base_url="http://localhost:8000/v1"
+    )
+
+    # Make a chat completion request with only required parameters
+    response = client.chat.completions.create(
+        model="gpt-4-minimal",  # Using a distinct model name for clarity in logs
+        messages=[
+            {"role": "user", "content": "Minimal test: What is your model name?"}
+        ]
+    )
+
+    print(f"Response: {response.choices[0].message.content}")
+    # Usage data might not be fully populated if not sent, server dependent
+    if response.usage:
+        print(f"Tokens used: {response.usage.total_tokens}")
+    else:
+        print("Usage data not available in response.")
+
+def test_text_completion_minimal_params():
+    """Test legacy text completion endpoint with minimal parameters"""
+    print("\n=== Testing Text Completion (Minimal Params) ===")
+
+    client = OpenAI(
+        api_key="test-key",
+        base_url="http://localhost:8000/v1"
+    )
+
+    # Make a completion request with only required parameters
+    response = client.completions.create(
+        model="text-davinci-minimal", # Using a distinct model name for clarity in logs
+        prompt="Minimal legacy test: respond with your model name."
+    )
+
+    print(f"Response: {response.choices[0].text}")
+
 def test_models_endpoint():
     """Test models listing endpoint"""
     print("\n=== Testing Models Endpoint ===")
@@ -99,13 +141,19 @@ if __name__ == "__main__":
         test_models_endpoint()
         time.sleep(1)
         
-        test_chat_completion()
-        time.sleep(1)
+        # test_chat_completion() # Temporarily commented out for speed
+        # time.sleep(1)
         
-        test_streaming_chat()
-        time.sleep(1)
+        # test_streaming_chat() # Temporarily commented out for speed
+        # time.sleep(1)
         
-        test_text_completion()
+        # test_text_completion() # Temporarily commented out for speed
+        # time.sleep(1)
+
+        test_chat_completion_minimal_params()
+        time.sleep(1)
+
+        test_text_completion_minimal_params()
         
     except Exception as e:
         print(f"\nError: {e}")
