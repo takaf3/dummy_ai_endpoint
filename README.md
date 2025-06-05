@@ -36,13 +36,13 @@ pip install -r requirements.txt
 ### CLI Mode (Default)
 1. **Start the server:**
 ```bash
-python openai_mock_server.py
+python dummy_ai_endpoint.py
 ```
 
 ### Web UI Mode
 1. **Start the server with web UI:**
 ```bash
-python openai_mock_server.py --mode web
+python dummy_ai_endpoint.py --mode web
 ```
 
 2. **Open your browser** to `http://localhost:8000` to access the web interface
@@ -123,7 +123,7 @@ All requests are automatically logged to:
 | File | Description |
 |------|-------------|
 | **Console** | Real-time colored output |
-| **`openai_mock_requests.log`** | Detailed text logs |
+| **`dummy_ai_endpoint_requests.log`** | Detailed text logs |
 | **`request_log.json`** | JSON format for parsing |
 
 ## 🔌 API Endpoints
@@ -138,7 +138,7 @@ All requests are automatically logged to:
 ## 🎯 Command Line Options
 
 ```bash
-python openai_mock_server.py [OPTIONS]
+python dummy_ai_endpoint.py [OPTIONS]
 
 Options:
   --mode {cli,web}  Response mode: 'cli' for terminal, 'web' for browser UI (default: cli)

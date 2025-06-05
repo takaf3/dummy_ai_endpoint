@@ -22,13 +22,13 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('openai_mock_requests.log'),
+        logging.FileHandler('dummy_ai_endpoint_requests.log'),
         logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="OpenAI API Mock Server")
+app = FastAPI(title="Dummy AI Endpoint")
 
 # Global state
 pending_requests = {}
