@@ -44,34 +44,34 @@ class ChatCompletionMessage(BaseModel):
 class ChatCompletionRequest(BaseModel):
     model: str
     messages: List[ChatCompletionMessage]
-    temperature: Optional[float] = 1.0
-    top_p: Optional[float] = 1.0
-    n: Optional[int] = 1
-    stream: Optional[bool] = False
-    stop: Optional[Union[str, List[str]]] = None
-    max_tokens: Optional[int] = None
-    presence_penalty: Optional[float] = 0
-    frequency_penalty: Optional[float] = 0
-    logit_bias: Optional[Dict[str, float]] = None
-    user: Optional[str] = None
+    temperature: Optional[float]
+    top_p: Optional[float]
+    n: Optional[int]
+    stream: Optional[bool]
+    stop: Optional[Union[str, List[str]]]
+    max_tokens: Optional[int]
+    presence_penalty: Optional[float]
+    frequency_penalty: Optional[float]
+    logit_bias: Optional[Dict[str, float]]
+    user: Optional[str]
 
 class CompletionRequest(BaseModel):
     model: str
     prompt: Union[str, List[str], List[int], List[List[int]]]
-    suffix: Optional[str] = None
-    max_tokens: Optional[int] = 16
-    temperature: Optional[float] = 1.0
-    top_p: Optional[float] = 1.0
-    n: Optional[int] = 1
-    stream: Optional[bool] = False
-    logprobs: Optional[int] = None
-    echo: Optional[bool] = False
-    stop: Optional[Union[str, List[str]]] = None
-    presence_penalty: Optional[float] = 0
-    frequency_penalty: Optional[float] = 0
-    best_of: Optional[int] = 1
-    logit_bias: Optional[Dict[str, float]] = None
-    user: Optional[str] = None
+    suffix: Optional[str]
+    max_tokens: Optional[int]
+    temperature: Optional[float]
+    top_p: Optional[float]
+    n: Optional[int]
+    stream: Optional[bool]
+    logprobs: Optional[int]
+    echo: Optional[bool]
+    stop: Optional[Union[str, List[str]]]
+    presence_penalty: Optional[float]
+    frequency_penalty: Optional[float]
+    best_of: Optional[int]
+    logit_bias: Optional[Dict[str, float]]
+    user: Optional[str]
 
 class Usage(BaseModel):
     prompt_tokens: int
