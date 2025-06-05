@@ -4,9 +4,11 @@ A debugging tool that mimics the OpenAI API, allowing you to intercept requests,
 
 Perfect for debugging applications where you don't have access to the source code but need to understand what prompts are being sent and test different response scenarios.
 
+**Now with a macOS menu bar app for easy control!** 🎉
+
 ## 🚀 Features
 
-- **Full OpenAI API compatibility**: Supports `/v1/chat/completions` and `/v1/completions` endpoints
+- **Enhanced OpenAI API compatibility**: Supports `/v1/chat/completions` and `/v1/completions` endpoints, accepting a wide range of official parameters (though not all functionalities are implemented).
 - **Request logging**: All requests are logged to console, file, and JSON format
 - **Interactive response control**: Manually input responses for each request
 - **Streaming support**: Supports both streaming and non-streaming responses
@@ -14,6 +16,7 @@ Perfect for debugging applications where you don't have access to the source cod
 - **Zero configuration**: Works as a drop-in replacement for the OpenAI API
 - **Web UI**: Beautiful web interface for managing responses (optional)
 - **Dual mode**: Choose between CLI prompts or web UI for response management
+- **macOS Menu Bar App**: Control the server directly from your menu bar (start/stop, mode selection, log viewing)
 
 ## 📋 Requirements
 
@@ -32,6 +35,18 @@ pip install -r requirements.txt
 ```
 
 ## 🚦 Quick Start
+
+### macOS Menu Bar App (Recommended for macOS)
+1. **Run the menu bar app:**
+```bash
+python menubar_app.py
+```
+
+2. **Control from your menu bar:**
+   - Click the 🤖 icon in your menu bar
+   - Select "Start Server" to begin
+   - Choose between CLI or Web UI mode
+   - Access logs and settings directly from the menu
 
 ### CLI Mode (Default)
 1. **Start the server:**
@@ -137,6 +152,7 @@ All requests are automatically logged to:
 
 ## 🎯 Command Line Options
 
+### Server Script
 ```bash
 python dummy_ai_endpoint.py [OPTIONS]
 
@@ -145,6 +161,20 @@ Options:
   --port PORT       Port to run the server on (default: 8000)
   --host HOST       Host to bind the server to (default: 0.0.0.0)
 ```
+
+### Menu Bar App (macOS)
+```bash
+python menubar_app.py
+```
+
+The menu bar app provides:
+- **Server Control**: Start/stop the server with one click
+- **Mode Selection**: Switch between CLI and Web UI modes
+- **Status Indicator**: Green ✅ when running, red 🔴 when stopped
+- **Quick Web UI Access**: Open the web interface directly
+- **Log Viewer**: View recent logs or open in Console.app
+- **Port Configuration**: Change the server port from the menu
+- **About Info**: View app information and version
 
 ## 💡 Use Cases
 
