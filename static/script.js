@@ -74,8 +74,28 @@ function displayRequest(request) {
         html += `<div class="detail-item"><span class="label">Prompt:</span></div>`;
         html += `<div class="messages"><pre>${escapeHtml(request.data.prompt)}</pre></div>`;
     }
+
+    // Iterate over all keys in request.data and display them if not already handled
+    const PRE_HANDLED_KEYS = ['model', 'temperature', 'max_tokens', 'stream', 'messages', 'prompt'];
+    let additionalParamsHtml = '';
+    for (const key in request.data) {
+        if (request.data.hasOwnProperty(key) && !PRE_HANDLED_KEYS.includes(key)) {
+            let value = request.data[key];
+            if (typeof value === 'object' || Array.isArray(value)) {
+                value = JSON.stringify(value);
+            }
+            additionalParamsHtml += `<div class="detail-item"><span class="label">${escapeHtml(key)}:</span> <span class="value">${escapeHtml(String(value))}</span></div>`;
+        }
+    }
+
+    if (additionalParamsHtml) {
+        html += '<div class="other-details">';
+        html += '<div class="label">Additional Parameters:</div>';
+        html += additionalParamsHtml;
+        html += '</div>';
+    }
     
-    html += '</div>';
+    html += '</div>'; // close request-details
     requestInfo.innerHTML = html;
     
     // Clear previous response
@@ -198,9 +218,27 @@ function updateHistoryDisplay() {
                 html += `<pre class="prompt-content">${escapeHtml(item.fullRequest.data.prompt)}</pre>`;
                 html += `</div>`;
             }
+
+            // Display other data from item.fullRequest.data
+            const PRE_HANDLED_HISTORY_KEYS = ['model', 'temperature', 'max_tokens', 'stream', 'messages', 'prompt'];
+            let additionalParamsHtml = '';
+            for (const key in item.fullRequest.data) {
+                if (item.fullRequest.data.hasOwnProperty(key) && !PRE_HANDLED_HISTORY_KEYS.includes(key)) {
+                    let value = item.fullRequest.data[key];
+                    if (typeof value === 'object' || Array.isArray(value)) {
+                        value = JSON.stringify(value);
+                    }
+                    additionalParamsHtml += `<strong>${escapeHtml(key)}:</strong> ${escapeHtml(String(value))}<br>`;
+                }
+            }
+
+            if (additionalParamsHtml) {
+                html += `<strong>Additional Parameters:</strong><br>`;
+                html += additionalParamsHtml;
+            }
             
-            html += `</div>`;
-            html += `</div>`;
+            html += `</div>`; // close detail-section
+            html += `</div>`; // close history-details
         }
         
         html += `</div>`;
