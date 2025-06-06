@@ -57,6 +57,8 @@ class AnthropicRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
     stream: Optional[bool] = None
     stop_sequences: Optional[List[str]] = None
+    tools: Optional[List[Dict[str, Any]]] = None
+    tool_choice: Optional[Dict[str, Any]] = None
 
 class ChatCompletionRequest(BaseModel):
     model: str
