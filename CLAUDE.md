@@ -22,11 +22,24 @@ python dummy_ai_endpoint.py --port 9000 --host 127.0.0.1
 pip install -r requirements.txt
 
 # Test OpenAI API compatibility (requires server to be running)
-python example_client.py
+python example_openai_client.py
 
 # Test Anthropic API compatibility (requires server to be running)
 python example_anthropic_client.py
 ```
+
+### macOS Menu Bar App
+```bash
+# Run the menu bar application
+python menubar_app.py
+```
+
+The menu bar app provides:
+- Server start/stop control with visual status indicator
+- Mode switching between CLI and Web UI
+- Quick access to the web interface
+- Log file viewing
+- Server configuration (port, host)
 
 ## Architecture Overview
 
@@ -35,8 +48,9 @@ This is a FastAPI-based mock server that mimics both OpenAI and Anthropic APIs, 
 ### Core Components
 
 - **`dummy_ai_endpoint.py`**: Main server file containing all API endpoints and response handling logic
+- **`menubar_app.py`**: macOS menu bar application for controlling the server
 - **`static/`**: Web UI assets (HTML, CSS, JS) for the web mode interface
-- **`example_client.py`**: Demonstration client showing how to interact with the OpenAI API mock
+- **`example_openai_client.py`**: Demonstration client showing how to interact with the OpenAI API mock
 - **`example_anthropic_client.py`**: Demonstration client showing how to interact with the Anthropic API mock
 
 ### Dual Response Modes

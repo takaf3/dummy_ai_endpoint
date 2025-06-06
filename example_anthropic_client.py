@@ -20,6 +20,8 @@ def create_message(
     system: Optional[str] = None,
     temperature: Optional[float] = None,
     stream: bool = False,
+    tools: Optional[List[Dict[str, Any]]] = None,
+    tool_choice: Optional[Dict[str, Any]] = None,
 ) -> Union[Dict[str, Any], None]:
     """Send a message to the Anthropic Messages API."""
     headers = {
@@ -40,6 +42,10 @@ def create_message(
         data["temperature"] = temperature
     if stream:
         data["stream"] = stream
+    if tools:
+        data["tools"] = tools
+    if tool_choice:
+        data["tool_choice"] = tool_choice
     
     try:
         if stream:
@@ -166,8 +172,192 @@ def main():
         stream=True
     )
     
-    # Example 5: Structured content (multimodal placeholder)
-    print("\n\n5. Structured content example:")
+    # Example 5: Tool use - Weather function
+    print("\n\n5. Tool use example - Weather function:")
+    print("-" * 40)
+    
+    # Define a weather tool
+    weather_tool = {
+        "name": "get_weather",
+        "description": "Get the current weather for a specific location. This tool provides temperature, conditions, and other weather information.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "The city and state/country for the weather query (e.g., 'San Francisco, CA' or 'London, UK')"
+                },
+                "unit": {
+                    "type": "string",
+                    "enum": ["celsius", "fahrenheit"],
+                    "description": "Temperature unit preference",
+                    "default": "fahrenheit"
+                }
+            },
+            "required": ["location"]
+        }
+    }
+    
+    response = create_message(
+        messages=[
+            {"role": "user", "content": "What's the weather like in Tokyo, Japan?"}
+        ],
+        tools=[weather_tool],
+        max_tokens=300
+    )
+    
+    if response:
+        print("Response received:")
+        print(f"Content: {response['content']}")
+        
+        # Check if Claude wants to use a tool
+        for content_block in response['content']:
+            if content_block.get('type') == 'tool_use':
+                print(f"\nTool call detected:")
+                print(f"Tool: {content_block['name']}")
+                print(f"Input: {content_block['input']}")
+                print(f"Tool ID: {content_block['id']}")
+    
+    # Example 6: Tool use with forced tool choice
+    print("\n\n6. Tool use with forced tool choice:")
+    print("-" * 40)
+    
+    # Define a calculator tool
+    calculator_tool = {
+        "name": "calculate",
+        "description": "Perform mathematical calculations. Supports basic arithmetic operations.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "expression": {
+                    "type": "string",
+                    "description": "Mathematical expression to evaluate (e.g., '2 + 3 * 4')"
+                }
+            },
+            "required": ["expression"]
+        }
+    }
+    
+    response = create_message(
+        messages=[
+            {"role": "user", "content": "What is 15 * 23 + 7?"}
+        ],
+        tools=[calculator_tool],
+        tool_choice={"type": "tool", "name": "calculate"},
+        max_tokens=200
+    )
+    
+    if response:
+        print("Response received:")
+        for content_block in response['content']:
+            if content_block.get('type') == 'tool_use':
+                print(f"Forced tool call:")
+                print(f"Tool: {content_block['name']}")
+                print(f"Expression: {content_block['input']['expression']}")
+    
+    # Example 7: Multiple tools available
+    print("\n\n7. Multiple tools example:")
+    print("-" * 40)
+    
+    # Define multiple tools
+    search_tool = {
+        "name": "web_search",
+        "description": "Search the web for current information on any topic.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search query to find information"
+                }
+            },
+            "required": ["query"]
+        }
+    }
+    
+    file_tool = {
+        "name": "read_file",
+        "description": "Read the contents of a file from the local filesystem.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "Path to the file to read"
+                }
+            },
+            "required": ["file_path"]
+        }
+    }
+    
+    response = create_message(
+        messages=[
+            {"role": "user", "content": "I need to find information about the latest Python version. Can you help?"}
+        ],
+        tools=[weather_tool, calculator_tool, search_tool, file_tool],
+        max_tokens=300
+    )
+    
+    if response:
+        print("Response received:")
+        for content_block in response['content']:
+            if content_block.get('type') == 'tool_use':
+                print(f"\nSelected tool: {content_block['name']}")
+                print(f"Input: {content_block['input']}")
+            elif content_block.get('type') == 'text':
+                print(f"Text response: {content_block['text']}")
+    
+    # Example 8: Tool use conversation with tool results
+    print("\n\n8. Tool use conversation with results:")
+    print("-" * 40)
+    
+    # Simulate a conversation where we provide tool results
+    conversation_with_tools = [
+        {"role": "user", "content": "What's the weather in Paris and what's 25 * 4?"},
+        {
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "I'll help you get the weather in Paris and calculate 25 * 4. Let me use the appropriate tools."
+                },
+                {
+                    "type": "tool_use",
+                    "id": "toolu_01A09q90qw90lkasdjfl",
+                    "name": "get_weather",
+                    "input": {"location": "Paris, France", "unit": "celsius"}
+                }
+            ]
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "toolu_01A09q90qw90lkasdjfl",
+                    "content": "Weather in Paris, France: 18°C, partly cloudy with light winds"
+                }
+            ]
+        }
+    ]
+    
+    response = create_message(
+        messages=conversation_with_tools,
+        tools=[weather_tool, calculator_tool],
+        max_tokens=300
+    )
+    
+    if response:
+        print("Response after tool result:")
+        for content_block in response['content']:
+            if content_block.get('type') == 'tool_use':
+                print(f"Next tool call: {content_block['name']}")
+                print(f"Input: {content_block['input']}")
+            elif content_block.get('type') == 'text':
+                print(f"Text: {content_block['text']}")
+    
+    # Example 9: Structured content (multimodal placeholder)
+    print("\n\n9. Structured content example:")
     print("-" * 40)
     
     response = create_message(
@@ -198,7 +388,11 @@ def main():
         print(f"Content: {response['content'][0]['text']}")
     
     print("\n" + "=" * 80)
-    print("Examples completed!")
+    print("Examples completed! Tool use examples demonstrate:")
+    print("- Basic tool definition and usage")
+    print("- Forced tool choice")
+    print("- Multiple tools selection")
+    print("- Tool result handling in conversations")
     print("=" * 80)
 
 
