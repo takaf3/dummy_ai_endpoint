@@ -27,6 +27,91 @@ function connectWebSocket() {
     };
 }
 
+// Helper function to escape HTML
+function escapeHtml(text) {
+    if (typeof text !== 'string') {
+        if (text === null || typeof text === 'undefined') {
+            text = '';
+        } else {
+            text = String(text);
+        }
+    }
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatTools(toolsArray) {
+    if (!Array.isArray(toolsArray)) {
+        return `<div class="tool-item">Invalid tools data: Expected an array. Received: <pre>${escapeHtml(JSON.stringify(toolsArray, null, 2))}</pre></div>`;
+    }
+    let html = '';
+    toolsArray.forEach(tool => {
+        if (tool && tool.function && typeof tool.function.name === 'string') {
+            html += '<div class="tool-item">';
+            html += `<div><strong>Type:</strong> ${escapeHtml(tool.type || 'N/A')}</div>`; // Assuming tool might have a 'type' property
+            html += `<div><strong>Name:</strong> ${escapeHtml(tool.function.name)}</div>`;
+            if (tool.function.description) {
+                html += `<div><strong>Description:</strong> ${escapeHtml(tool.function.description)}</div>`;
+            }
+            if (tool.function.parameters) {
+                html += `<div><strong>Parameters:</strong> <pre>${escapeHtml(JSON.stringify(tool.function.parameters, null, 2))}</pre></div>`;
+            }
+            html += '</div>';
+        } else {
+            html += `<div class="tool-item">Invalid tool object: <pre>${escapeHtml(JSON.stringify(tool, null, 2))}</pre></div>`;
+        }
+    });
+    return html;
+}
+
+function formatToolChoice(toolChoice) {
+    if (typeof toolChoice === 'string') {
+        return `<div><strong>Tool Choice:</strong> ${escapeHtml(toolChoice)}</div>`;
+    }
+    if (toolChoice && typeof toolChoice === 'object') {
+        let html = '<div><strong>Tool Choice:</strong></div>';
+        if (toolChoice.type) {
+            html += `<div><strong>Type:</strong> ${escapeHtml(toolChoice.type)}</div>`;
+        }
+        if (toolChoice.function && toolChoice.function.name) {
+            html += `<div><strong>Function Name:</strong> ${escapeHtml(toolChoice.function.name)}</div>`;
+        } else if (Object.keys(toolChoice).length > 0) { // Fallback for other structures
+             html += `<pre>${escapeHtml(JSON.stringify(toolChoice, null, 2))}</pre>`;
+        } else {
+            return `<div><strong>Tool Choice:</strong> Malformed object</div>`;
+        }
+        return html;
+    }
+    return `<div><strong>Tool Choice:</strong> Invalid data <pre>${escapeHtml(JSON.stringify(toolChoice, null, 2))}</pre></div>`;
+}
+
+// Assuming formatFunctions is similar to formatTools for now
+function formatFunctions(functionsArray) {
+    return formatTools(functionsArray); // Reusing formatTools
+}
+
+// Assuming formatFunctionCall is similar to formatToolChoice (for function calls)
+// For actual function call results, the structure might be different (e.g. name, arguments, content/result)
+// This is for the *request* part if it specifies a function_call.
+function formatFunctionCall(functionCall) {
+     if (functionCall && typeof functionCall === 'object') {
+        let html = '';
+        if (functionCall.name) {
+             html += `<div><strong>Name:</strong> ${escapeHtml(functionCall.name)}</div>`;
+        }
+        if (functionCall.arguments) {
+             html += `<div><strong>Arguments:</strong> <pre>${escapeHtml(functionCall.arguments)}</pre></div>`; // Arguments are often stringified JSON
+        }
+        if (!html) { // If no name or arguments, show raw
+            return `<pre>${escapeHtml(JSON.stringify(functionCall, null, 2))}</pre>`;
+        }
+        return html;
+    }
+    return `<pre>${escapeHtml(JSON.stringify(functionCall, null, 2))}</pre>`;
+}
+
+
 function updateServerStatus(connected) {
     const statusEl = document.getElementById('server-status');
     statusEl.textContent = connected ? 'Connected' : 'Disconnected';
@@ -75,8 +160,22 @@ function displayRequest(request) {
         html += `<div class="messages"><pre>${escapeHtml(request.data.prompt)}</pre></div>`;
     }
 
+    // Specific formatting for tools, tool_choice, functions, function_call
+    if (request.data.tools) {
+        html += '<div class="detail-section"><div class="label">Tools:</div>' + formatTools(request.data.tools) + '</div>';
+    }
+    if (request.data.tool_choice) {
+        html += '<div class="detail-section"><div class="label">Tool Choice:</div>' + formatToolChoice(request.data.tool_choice) + '</div>';
+    }
+    if (request.data.functions) { // Assuming 'functions' has similar structure to 'tools'
+        html += '<div class="detail-section"><div class="label">Functions:</div>' + formatFunctions(request.data.functions) + '</div>';
+    }
+    if (request.data.function_call) { // This is for *requesting* a function call
+        html += '<div class="detail-section"><div class="label">Function Call (Request):</div>' + formatFunctionCall(request.data.function_call) + '</div>';
+    }
+
     // Iterate over all keys in request.data and display them if not already handled
-    const PRE_HANDLED_KEYS = ['model', 'temperature', 'max_tokens', 'stream', 'messages', 'prompt'];
+    const PRE_HANDLED_KEYS = ['model', 'temperature', 'max_tokens', 'stream', 'messages', 'prompt', 'tools', 'tool_choice', 'functions', 'function_call'];
     let additionalParamsHtml = '';
     for (const key in request.data) {
         if (request.data.hasOwnProperty(key) && !PRE_HANDLED_KEYS.includes(key)) {
@@ -219,8 +318,22 @@ function updateHistoryDisplay() {
                 html += `</div>`;
             }
 
+            // Specific formatting for tools, tool_choice, functions, function_call in history
+            if (item.fullRequest.data.tools) {
+                html += `<strong>Tools:</strong><br>${formatTools(item.fullRequest.data.tools)}`;
+            }
+            if (item.fullRequest.data.tool_choice) {
+                html += `<strong>Tool Choice:</strong><br>${formatToolChoice(item.fullRequest.data.tool_choice)}`;
+            }
+            if (item.fullRequest.data.functions) {
+                html += `<strong>Functions:</strong><br>${formatFunctions(item.fullRequest.data.functions)}`;
+            }
+            if (item.fullRequest.data.function_call) {
+                html += `<strong>Function Call (Request):</strong><br>${formatFunctionCall(item.fullRequest.data.function_call)}`;
+            }
+
             // Display other data from item.fullRequest.data
-            const PRE_HANDLED_HISTORY_KEYS = ['model', 'temperature', 'max_tokens', 'stream', 'messages', 'prompt'];
+            const PRE_HANDLED_HISTORY_KEYS = ['model', 'temperature', 'max_tokens', 'stream', 'messages', 'prompt', 'tools', 'tool_choice', 'functions', 'function_call'];
             let additionalParamsHtml = '';
             for (const key in item.fullRequest.data) {
                 if (item.fullRequest.data.hasOwnProperty(key) && !PRE_HANDLED_HISTORY_KEYS.includes(key)) {
@@ -250,12 +363,6 @@ function updateHistoryDisplay() {
 function toggleHistoryItem(index) {
     requestHistory[index].expanded = !requestHistory[index].expanded;
     updateHistoryDisplay();
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
 
 // Initialize
