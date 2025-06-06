@@ -415,11 +415,31 @@ function toggleHistoryItem(index) {
     updateHistoryDisplay();
 }
 
+function sendDefaultResponse() {
+    if (!currentRequestId) return;
+    
+    const defaultMessage = "Hello! I'm the AI assistant. How can I help you today?";
+    const shouldStream = document.getElementById('stream-response').checked;
+    
+    const message = {
+        type: 'response',
+        request_id: currentRequestId,
+        response: defaultMessage,
+        stream: shouldStream
+    };
+    
+    ws.send(JSON.stringify(message));
+    
+    // Reset UI
+    resetResponseUI();
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     connectWebSocket();
     
     document.getElementById('send-response').addEventListener('click', sendResponse);
+    document.getElementById('send-default').addEventListener('click', sendDefaultResponse);
     document.getElementById('send-error').addEventListener('click', sendError);
     
     // Allow Ctrl+Enter to send response

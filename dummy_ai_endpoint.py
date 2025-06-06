@@ -126,10 +126,16 @@ def get_cli_response(prompt_info: str) -> str:
     print(prompt_info)
     print("\n" + "-"*80)
     print("Enter your response (type 'END' on a new line when done):")
+    print("Or press ENTER to use default message: 'Hello! I'm the AI assistant. How can I help you today?'")
     
     lines = []
+    first_line = True
     while True:
         line = input()
+        if first_line and line.strip() == '':
+            # User pressed enter immediately - use default message
+            return "Hello! I'm the AI assistant. How can I help you today?"
+        first_line = False
         if line.strip() == 'END':
             break
         lines.append(line)
