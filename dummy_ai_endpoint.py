@@ -28,7 +28,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Dummy AI Endpoint")
+app = FastAPI(title="Dummy AI Endpoint - OpenAI & Anthropic Compatible")
 
 # Global state
 pending_requests = {}
@@ -40,6 +40,25 @@ class ChatCompletionMessage(BaseModel):
     role: str
     content: str
     name: Optional[str] = None
+
+# Anthropic API Models
+class AnthropicMessage(BaseModel):
+    role: str
+    content: Union[str, List[Dict[str, Any]]]
+
+class AnthropicRequest(BaseModel):
+    model: str
+    messages: List[AnthropicMessage]
+    max_tokens: int
+    system: Optional[str] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
+    metadata: Optional[Dict[str, Any]] = None
+    stream: Optional[bool] = None
+    stop_sequences: Optional[List[str]] = None
+    tools: Optional[List[Dict[str, Any]]] = None
+    tool_choice: Optional[Dict[str, Any]] = None
 
 class ChatCompletionRequest(BaseModel):
     model: str
@@ -107,10 +126,16 @@ def get_cli_response(prompt_info: str) -> str:
     print(prompt_info)
     print("\n" + "-"*80)
     print("Enter your response (type 'END' on a new line when done):")
+    print("Or press ENTER to use default message: 'Hello! I'm the AI assistant. How can I help you today?'")
     
     lines = []
+    first_line = True
     while True:
         line = input()
+        if first_line and line.strip() == '':
+            # User pressed enter immediately - use default message
+            return "Hello! I'm the AI assistant. How can I help you today?"
+        first_line = False
         if line.strip() == 'END':
             break
         lines.append(line)
@@ -162,15 +187,29 @@ def count_tokens(text: str) -> int:
 async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Optional[bool]) -> Any:
     """Handle request with appropriate response mode"""
     # Create prompt info for display
-    prompt_info = f"Model: {request_data.get('model', 'unknown')}\n"
+    prompt_info = f"Endpoint: {endpoint}\n"
+    prompt_info += f"Model: {request_data.get('model', 'unknown')}\n"
     prompt_info += f"Temperature: {request_data.get('temperature', 1.0)}\n"
     prompt_info += f"Max Tokens: {request_data.get('max_tokens', 'None')}\n"
     prompt_info += f"Stream: {stream}\n"
     
+    # Handle Anthropic-specific fields
+    if "Anthropic" in endpoint:
+        if "system" in request_data and request_data["system"]:
+            prompt_info += f"\nSystem: {request_data['system']}\n"
+        if "top_k" in request_data and request_data["top_k"] is not None:
+            prompt_info += f"Top K: {request_data['top_k']}\n"
+        if "stop_sequences" in request_data and request_data["stop_sequences"]:
+            prompt_info += f"Stop Sequences: {request_data['stop_sequences']}\n"
+    
     if "messages" in request_data:
         prompt_info += "\nMessages:\n"
         for msg in request_data["messages"]:
-            prompt_info += f"[{msg['role']}]: {msg['content']}\n"
+            content = msg['content']
+            # Handle structured content for Anthropic
+            if isinstance(content, list):
+                content = str(content)
+            prompt_info += f"[{msg['role']}]: {content}\n"
     elif "prompt" in request_data:
         prompt_info += f"\nPrompt: {request_data['prompt']}\n"
     
@@ -399,6 +438,136 @@ async def list_models():
         ]
     }
 
+@app.post("/v1/messages")
+async def anthropic_messages(request: AnthropicRequest, raw_request: Request):
+    """Handle Anthropic messages API requests"""
+    request_dict = request.dict()
+    log_request("/v1/messages (Anthropic)", request_dict)
+    
+    try:
+        stream_param = request.stream if request.stream is not None else False
+        user_response = await handle_request("/v1/messages (Anthropic)", request_dict, stream_param)
+    except Exception as e:
+        return Response(
+            content=json.dumps({"error": {"type": "error", "message": str(e)}}),
+            status_code=400,
+            media_type="application/json"
+        )
+    
+    # Calculate token usage (approximation)
+    prompt_tokens = 0
+    if request.system:
+        prompt_tokens += count_tokens(request.system)
+    for msg in request.messages:
+        if isinstance(msg.content, str):
+            prompt_tokens += count_tokens(msg.content)
+        else:
+            # Handle structured content (e.g., multimodal)
+            prompt_tokens += count_tokens(str(msg.content))
+    
+    completion_tokens = count_tokens(user_response)
+    
+    if stream_param:
+        # Streaming response for Anthropic
+        async def generate_anthropic_stream():
+            # Send initial message_start event
+            start_event = {
+                "type": "message_start",
+                "message": {
+                    "id": f"msg_{uuid.uuid4().hex[:24]}",
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [],
+                    "model": request.model,
+                    "stop_reason": None,
+                    "stop_sequence": None,
+                    "usage": {
+                        "input_tokens": int(prompt_tokens),
+                        "output_tokens": 0
+                    }
+                }
+            }
+            yield f"event: message_start\ndata: {json.dumps(start_event)}\n\n"
+            
+            # Send content_block_start
+            content_start = {
+                "type": "content_block_start",
+                "index": 0,
+                "content_block": {
+                    "type": "text",
+                    "text": ""
+                }
+            }
+            yield f"event: content_block_start\ndata: {json.dumps(content_start)}\n\n"
+            
+            # Send content in chunks
+            words = user_response.split()
+            output_tokens = 0
+            for i in range(0, len(words), 3):  # Send 3 words at a time
+                chunk_content = ' '.join(words[i:i+3])
+                if i + 3 < len(words):
+                    chunk_content += ' '
+                
+                output_tokens += count_tokens(chunk_content)
+                
+                delta_event = {
+                    "type": "content_block_delta",
+                    "index": 0,
+                    "delta": {
+                        "type": "text_delta",
+                        "text": chunk_content
+                    }
+                }
+                yield f"event: content_block_delta\ndata: {json.dumps(delta_event)}\n\n"
+                await asyncio.sleep(0.1)  # Simulate streaming delay
+            
+            # Send content_block_stop
+            content_stop = {
+                "type": "content_block_stop",
+                "index": 0
+            }
+            yield f"event: content_block_stop\ndata: {json.dumps(content_stop)}\n\n"
+            
+            # Send message_delta with final usage
+            delta_event = {
+                "type": "message_delta",
+                "delta": {
+                    "stop_reason": "end_turn",
+                    "stop_sequence": None
+                },
+                "usage": {
+                    "output_tokens": int(completion_tokens)
+                }
+            }
+            yield f"event: message_delta\ndata: {json.dumps(delta_event)}\n\n"
+            
+            # Send message_stop
+            stop_event = {"type": "message_stop"}
+            yield f"event: message_stop\ndata: {json.dumps(stop_event)}\n\n"
+        
+        return StreamingResponse(generate_anthropic_stream(), media_type="text/event-stream")
+    else:
+        # Non-streaming response
+        response = {
+            "id": f"msg_{uuid.uuid4().hex[:24]}",
+            "type": "message",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": user_response
+                }
+            ],
+            "model": request.model,
+            "stop_reason": "end_turn",
+            "stop_sequence": None,
+            "usage": {
+                "input_tokens": int(prompt_tokens),
+                "output_tokens": int(completion_tokens)
+            }
+        }
+        return response
+
 @app.get("/")
 async def root():
     """Root endpoint"""
@@ -407,11 +576,12 @@ async def root():
         return HTMLResponse(content=open("static/index.html", "r").read())
     else:
         return {
-            "message": "OpenAI API Mock Server",
+            "message": "OpenAI & Anthropic API Mock Server",
             "endpoints": [
-                "/v1/chat/completions",
-                "/v1/completions",
-                "/v1/models"
+                "/v1/chat/completions (OpenAI)",
+                "/v1/completions (OpenAI)",
+                "/v1/models (OpenAI)",
+                "/v1/messages (Anthropic)"
             ],
             "mode": response_mode
         }
@@ -464,13 +634,13 @@ if __name__ == "__main__":
     response_mode = args.mode
     
     print("\n" + "="*80)
-    print("OpenAI API Mock Server")
+    print("OpenAI & Anthropic API Mock Server")
     print("="*80)
     print(f"Mode: {response_mode.upper()}")
     print(f"Server: http://localhost:{args.port}")
     if response_mode == "web":
         print(f"Web UI: http://localhost:{args.port}")
-    print("\nThis server mimics the OpenAI API for debugging purposes.")
+    print("\nThis server mimics OpenAI and Anthropic APIs for debugging purposes.")
     print("All requests will be logged to:")
     print("  - Console output")
     print("  - openai_mock_requests.log")

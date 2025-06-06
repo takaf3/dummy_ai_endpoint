@@ -1,6 +1,6 @@
 # dummy ai endpoint
 
-A debugging tool that mimics the OpenAI API, allowing you to intercept requests, log prompts, and manually control responses for testing LLM-powered applications.
+A debugging tool that mimics both OpenAI and Anthropic APIs, allowing you to intercept requests, log prompts, and manually control responses for testing LLM-powered applications.
 
 Perfect for debugging applications where you don't have access to the source code but need to understand what prompts are being sent and test different response scenarios.
 
@@ -8,12 +8,15 @@ Perfect for debugging applications where you don't have access to the source cod
 
 ## 🚀 Features
 
-- **Enhanced OpenAI API compatibility**: Supports `/v1/chat/completions` and `/v1/completions` endpoints, accepting a wide range of official parameters (though not all functionalities are implemented).
+- **Dual API compatibility**: Supports both OpenAI and Anthropic APIs
+  - OpenAI: `/v1/chat/completions` and `/v1/completions` endpoints
+  - Anthropic: `/v1/messages` endpoint
+- **Tool Use Support**: Function calling capabilities for both OpenAI and Anthropic APIs
 - **Request logging**: All requests are logged to console, file, and JSON format
 - **Interactive response control**: Manually input responses for each request
-- **Streaming support**: Supports both streaming and non-streaming responses
-- **Token counting**: Approximates token usage similar to OpenAI
-- **Zero configuration**: Works as a drop-in replacement for the OpenAI API
+- **Streaming support**: Supports both streaming and non-streaming responses for both APIs
+- **Token counting**: Approximates token usage similar to OpenAI and Anthropic
+- **Zero configuration**: Works as a drop-in replacement for both APIs
 - **Web UI**: Beautiful web interface for managing responses (optional)
 - **Dual mode**: Choose between CLI prompts or web UI for response management
 - **macOS Menu Bar App**: Control the server directly from your menu bar (start/stop, mode selection, log viewing)
@@ -66,6 +69,7 @@ python dummy_ai_endpoint.py --mode web
 
 Configure your application to use `http://localhost:8000` as the API base URL:
 
+**For OpenAI:**
 ```python
 # Using OpenAI Python library
 from openai import OpenAI
@@ -79,6 +83,17 @@ client = OpenAI(
 import openai
 openai.api_base = "http://localhost:8000/v1"
 openai.api_key = "dummy-key"
+```
+
+**For Anthropic:**
+```python
+# Using Anthropic Python library
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="dummy-key",  # Any string works
+    base_url="http://localhost:8000"
+)
 ```
 
 ### Response Management
@@ -110,8 +125,9 @@ Enter your response (type 'END' on a new line when done):
 
 ## 📝 Example Usage
 
+**OpenAI Example:**
 ```python
-# example_client.py
+# example_openai_client.py
 from openai import OpenAI
 
 # Point to your mock server
@@ -131,6 +147,109 @@ for chunk in response:
     print(chunk.choices[0].delta.content, end="")
 ```
 
+**Anthropic Example:**
+```python
+# example_anthropic_client.py
+from anthropic import Anthropic
+
+# Point to your mock server
+client = Anthropic(api_key="test", base_url="http://localhost:8000")
+
+# Make a request - this will be intercepted
+response = client.messages.create(
+    model="claude-3-opus-20240229",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "What's 2+2?"}
+    ],
+    stream=True  # Streaming is supported!
+)
+
+for chunk in response:
+    if chunk.type == "content_block_delta":
+        print(chunk.delta.text, end="")
+```
+
+**OpenAI Tool Use Example:**
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="test-key",
+    base_url="http://localhost:8000/v1"
+)
+
+# Define tools
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get weather information for a location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "City name"
+                    }
+                },
+                "required": ["location"]
+            }
+        }
+    }
+]
+
+# Make request with tools
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "user", "content": "What's the weather in Tokyo?"}
+    ],
+    tools=tools,
+    tool_choice="auto"
+)
+```
+
+**Anthropic Tool Use Example:**
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="test-key",
+    base_url="http://localhost:8000"
+)
+
+# Define tools
+tools = [
+    {
+        "name": "get_weather",
+        "description": "Get weather information for a location",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "City name"
+                }
+            },
+            "required": ["location"]
+        }
+    }
+]
+
+# Make request with tools
+response = client.messages.create(
+    model="claude-3-sonnet-20240229",
+    max_tokens=1000,
+    messages=[
+        {"role": "user", "content": "What's the weather in Tokyo?"}
+    ],
+    tools=tools,
+    tool_choice={"type": "tool", "name": "get_weather"}
+)
+```
+
 ## 📊 Logging
 
 All requests are automatically logged to:
@@ -143,12 +262,13 @@ All requests are automatically logged to:
 
 ## 🔌 API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Server info |
-| `/v1/models` | GET | List available models |
-| `/v1/chat/completions` | POST | Chat completions (GPT-3.5/4) |
-| `/v1/completions` | POST | Text completions (GPT-3) |
+| Endpoint | Method | Description | API |
+|----------|--------|-------------|-----|
+| `/` | GET | Server info | - |
+| `/v1/models` | GET | List available models | OpenAI |
+| `/v1/chat/completions` | POST | Chat completions (GPT-3.5/4) | OpenAI |
+| `/v1/completions` | POST | Text completions (GPT-3) | OpenAI |
+| `/v1/messages` | POST | Messages (Claude) | Anthropic |
 
 ## 🎯 Command Line Options
 
@@ -183,6 +303,12 @@ The menu bar app provides:
 - **Analyze usage**: Log and analyze prompt patterns and costs
 - **Development**: Test your app without burning API credits
 - **Security auditing**: Inspect what data is being sent to LLMs
+
+## 📚 Documentation
+
+- [CLAUDE.md](CLAUDE.md) - Anthropic Claude API compatibility details
+- [TOOL_USE_EXAMPLES.md](TOOL_USE_EXAMPLES.md) - Comprehensive Anthropic tool use examples and documentation
+- [OPENAI_TOOL_USE_EXAMPLES.md](OPENAI_TOOL_USE_EXAMPLES.md) - Comprehensive OpenAI function calling examples and documentation
 
 ## 🤝 Contributing
 

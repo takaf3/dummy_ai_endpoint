@@ -47,19 +47,39 @@ function formatTools(toolsArray) {
     }
     let html = '';
     toolsArray.forEach(tool => {
-        if (tool && tool.function && typeof tool.function.name === 'string') {
+        // Handle both OpenAI format (tool.function) and Anthropic format (direct properties)
+        if (tool) {
             html += '<div class="tool-item">';
-            html += `<div><strong>Type:</strong> ${escapeHtml(tool.type || 'N/A')}</div>`; // Assuming tool might have a 'type' property
-            html += `<div><strong>Name:</strong> ${escapeHtml(tool.function.name)}</div>`;
-            if (tool.function.description) {
-                html += `<div><strong>Description:</strong> ${escapeHtml(tool.function.description)}</div>`;
+            
+            // Check if it's OpenAI format
+            if (tool.function && typeof tool.function.name === 'string') {
+                html += `<div><strong>Type:</strong> ${escapeHtml(tool.type || 'function')}</div>`;
+                html += `<div><strong>Name:</strong> ${escapeHtml(tool.function.name)}</div>`;
+                if (tool.function.description) {
+                    html += `<div><strong>Description:</strong> ${escapeHtml(tool.function.description)}</div>`;
+                }
+                if (tool.function.parameters) {
+                    html += `<div><strong>Parameters:</strong> <pre>${escapeHtml(JSON.stringify(tool.function.parameters, null, 2))}</pre></div>`;
+                }
             }
-            if (tool.function.parameters) {
-                html += `<div><strong>Parameters:</strong> <pre>${escapeHtml(JSON.stringify(tool.function.parameters, null, 2))}</pre></div>`;
+            // Check if it's Anthropic format
+            else if (tool.name && typeof tool.name === 'string') {
+                html += `<div><strong>Name:</strong> ${escapeHtml(tool.name)}</div>`;
+                if (tool.description) {
+                    html += `<div><strong>Description:</strong> ${escapeHtml(tool.description)}</div>`;
+                }
+                if (tool.input_schema) {
+                    html += `<div><strong>Input Schema:</strong> <pre>${escapeHtml(JSON.stringify(tool.input_schema, null, 2))}</pre></div>`;
+                }
             }
+            // Unknown format
+            else {
+                html += `<div>Unknown tool format: <pre>${escapeHtml(JSON.stringify(tool, null, 2))}</pre></div>`;
+            }
+            
             html += '</div>';
         } else {
-            html += `<div class="tool-item">Invalid tool object: <pre>${escapeHtml(JSON.stringify(tool, null, 2))}</pre></div>`;
+            html += `<div class="tool-item">Invalid tool object: null or undefined</div>`;
         }
     });
     return html;
@@ -71,16 +91,25 @@ function formatToolChoice(toolChoice) {
     }
     if (toolChoice && typeof toolChoice === 'object') {
         let html = '<div><strong>Tool Choice:</strong></div>';
+        
+        // Handle both OpenAI and Anthropic formats
         if (toolChoice.type) {
             html += `<div><strong>Type:</strong> ${escapeHtml(toolChoice.type)}</div>`;
         }
+        
+        // OpenAI format: { type: "function", function: { name: "..." } }
         if (toolChoice.function && toolChoice.function.name) {
             html += `<div><strong>Function Name:</strong> ${escapeHtml(toolChoice.function.name)}</div>`;
-        } else if (Object.keys(toolChoice).length > 0) { // Fallback for other structures
-             html += `<pre>${escapeHtml(JSON.stringify(toolChoice, null, 2))}</pre>`;
-        } else {
-            return `<div><strong>Tool Choice:</strong> Malformed object</div>`;
         }
+        // Anthropic format: { type: "tool", name: "..." }
+        else if (toolChoice.name) {
+            html += `<div><strong>Tool Name:</strong> ${escapeHtml(toolChoice.name)}</div>`;
+        }
+        // Show raw data for other structures
+        else if (Object.keys(toolChoice).length > 1 || (Object.keys(toolChoice).length === 1 && !toolChoice.type)) {
+            html += `<pre>${escapeHtml(JSON.stringify(toolChoice, null, 2))}</pre>`;
+        }
+        
         return html;
     }
     return `<div><strong>Tool Choice:</strong> Invalid data <pre>${escapeHtml(JSON.stringify(toolChoice, null, 2))}</pre></div>`;
@@ -145,13 +174,34 @@ function displayRequest(request) {
     html += `<div class="detail-item"><span class="label">Max Tokens:</span> <span class="value">${request.data.max_tokens || 'None'}</span></div>`;
     html += `<div class="detail-item"><span class="label">Stream:</span> <span class="value">${request.data.stream || false}</span></div>`;
     
+    // Display Anthropic-specific fields
+    if (request.endpoint.includes('Anthropic')) {
+        if (request.data.system) {
+            html += `<div class="detail-item"><span class="label">System:</span> <span class="value">${escapeHtml(request.data.system)}</span></div>`;
+        }
+        if (request.data.top_p !== undefined && request.data.top_p !== null) {
+            html += `<div class="detail-item"><span class="label">Top P:</span> <span class="value">${request.data.top_p}</span></div>`;
+        }
+        if (request.data.top_k !== undefined && request.data.top_k !== null) {
+            html += `<div class="detail-item"><span class="label">Top K:</span> <span class="value">${request.data.top_k}</span></div>`;
+        }
+        if (request.data.stop_sequences && request.data.stop_sequences.length > 0) {
+            html += `<div class="detail-item"><span class="label">Stop Sequences:</span> <span class="value">${escapeHtml(JSON.stringify(request.data.stop_sequences))}</span></div>`;
+        }
+    }
+    
     // Display messages or prompt
     if (request.data.messages) {
         html += '<div class="messages"><div class="label">Messages:</div>';
         request.data.messages.forEach(msg => {
             html += `<div class="message">`;
             html += `<div class="message-role">${msg.role}:</div>`;
-            html += `<div>${escapeHtml(msg.content)}</div>`;
+            // Handle both string and structured content (Anthropic format)
+            let content = msg.content;
+            if (typeof content === 'object' || Array.isArray(content)) {
+                content = JSON.stringify(content, null, 2);
+            }
+            html += `<div>${escapeHtml(content)}</div>`;
             html += `</div>`;
         });
         html += '</div>';
@@ -365,11 +415,31 @@ function toggleHistoryItem(index) {
     updateHistoryDisplay();
 }
 
+function sendDefaultResponse() {
+    if (!currentRequestId) return;
+    
+    const defaultMessage = "Hello! I'm the AI assistant. How can I help you today?";
+    const shouldStream = document.getElementById('stream-response').checked;
+    
+    const message = {
+        type: 'response',
+        request_id: currentRequestId,
+        response: defaultMessage,
+        stream: shouldStream
+    };
+    
+    ws.send(JSON.stringify(message));
+    
+    // Reset UI
+    resetResponseUI();
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     connectWebSocket();
     
     document.getElementById('send-response').addEventListener('click', sendResponse);
+    document.getElementById('send-default').addEventListener('click', sendDefaultResponse);
     document.getElementById('send-error').addEventListener('click', sendError);
     
     // Allow Ctrl+Enter to send response
