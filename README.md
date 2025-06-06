@@ -14,10 +14,11 @@ Perfect for debugging applications where you don't have access to the source cod
 - **Tool Use Support**: Function calling capabilities for both OpenAI and Anthropic APIs
 - **Request logging**: All requests are logged to console, file, and JSON format
 - **Interactive response control**: Manually input responses for each request
+- **Default responses**: Quick testing with one-click/enter default responses
 - **Streaming support**: Supports both streaming and non-streaming responses for both APIs
 - **Token counting**: Approximates token usage similar to OpenAI and Anthropic
 - **Zero configuration**: Works as a drop-in replacement for both APIs
-- **Web UI**: Beautiful web interface for managing responses (optional)
+- **Web UI**: Beautiful web interface for managing responses with proper Anthropic tool display
 - **Dual mode**: Choose between CLI prompts or web UI for response management
 - **macOS Menu Bar App**: Control the server directly from your menu bar (start/stop, mode selection, log viewing)
 
@@ -115,12 +116,13 @@ NEW REQUEST TO /v1/chat/completions
 }
 
 Enter your response (type 'END' on a new line when done):
+Or press ENTER to use default message: 'Hello! I'm the AI assistant. How can I help you today?'
 ```
 
 **In Web UI Mode**, you'll:
 1. See incoming requests in real-time on the web interface
 2. Type your response in the text area
-3. Click "Send Response" or "Send Error"
+3. Click "Send Response", "Send Default", or "Send Error"
 4. View request history and details
 
 ## 📝 Example Usage
@@ -306,9 +308,7 @@ The menu bar app provides:
 
 ## 📚 Documentation
 
-- [CLAUDE.md](CLAUDE.md) - Anthropic Claude API compatibility details
-- [TOOL_USE_EXAMPLES.md](TOOL_USE_EXAMPLES.md) - Comprehensive Anthropic tool use examples and documentation
-- [OPENAI_TOOL_USE_EXAMPLES.md](OPENAI_TOOL_USE_EXAMPLES.md) - Comprehensive OpenAI function calling examples and documentation
+- [CLAUDE.md](CLAUDE.md) - Project guidance and architecture overview for Claude Code
 
 ## 🤝 Contributing
 
