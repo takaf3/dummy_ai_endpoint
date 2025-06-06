@@ -141,7 +141,7 @@ function displayRequest(request) {
     html += `<div class="detail-item"><span class="label">Request ID:</span> <span class="value">${request.id}</span></div>`;
     html += `<div class="detail-item"><span class="label">Endpoint:</span> <span class="value">${request.endpoint}</span></div>`;
     html += `<div class="detail-item"><span class="label">Model:</span> <span class="value">${request.data.model}</span></div>`;
-    html += `<div class="detail-item"><span class="label">Temperature:</span> <span class="value">${request.data.temperature || 1.0}</span></div>`;
+    html += `<div class="detail-item"><span class="label">Temperature:</span> <span class="value">${(request.data.temperature === undefined || request.data.temperature === null) ? 'None' : request.data.temperature}</span></div>`;
     html += `<div class="detail-item"><span class="label">Max Tokens:</span> <span class="value">${request.data.max_tokens || 'None'}</span></div>`;
     html += `<div class="detail-item"><span class="label">Stream:</span> <span class="value">${request.data.stream || false}</span></div>`;
     
@@ -297,7 +297,7 @@ function updateHistoryDisplay() {
             html += `<div class="detail-section">`;
             html += `<strong>Request ID:</strong> ${item.fullRequest.id}<br>`;
             html += `<strong>Model:</strong> ${item.fullRequest.data.model}<br>`;
-            html += `<strong>Temperature:</strong> ${item.fullRequest.data.temperature || 1.0}<br>`;
+            html += `<strong>Temperature:</strong> ${(item.fullRequest.data.temperature === undefined || item.fullRequest.data.temperature === null) ? 'None' : item.fullRequest.data.temperature}<br>`;
             html += `<strong>Max Tokens:</strong> ${item.fullRequest.data.max_tokens || 'None'}<br>`;
             html += `<strong>Stream:</strong> ${item.fullRequest.data.stream || false}<br>`;
             
