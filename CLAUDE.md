@@ -21,19 +21,23 @@ python dummy_ai_endpoint.py --port 9000 --host 127.0.0.1
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the example client (requires server to be running)
+# Test OpenAI API compatibility (requires server to be running)
 python example_client.py
+
+# Test Anthropic API compatibility (requires server to be running)
+python example_anthropic_client.py
 ```
 
 ## Architecture Overview
 
-This is a FastAPI-based OpenAI API mock server that intercepts requests and allows manual response control. The application operates in two modes:
+This is a FastAPI-based mock server that mimics both OpenAI and Anthropic APIs, intercepting requests and allowing manual response control. The application operates in two modes:
 
 ### Core Components
 
 - **`dummy_ai_endpoint.py`**: Main server file containing all API endpoints and response handling logic
 - **`static/`**: Web UI assets (HTML, CSS, JS) for the web mode interface
-- **`example_client.py`**: Demonstration client showing how to interact with the mock server
+- **`example_client.py`**: Demonstration client showing how to interact with the OpenAI API mock
+- **`example_anthropic_client.py`**: Demonstration client showing how to interact with the Anthropic API mock
 
 ### Dual Response Modes
 
@@ -44,12 +48,20 @@ The server supports two response modes controlled by the `--mode` flag:
 
 ### API Compatibility
 
-The server mimics OpenAI's API structure:
+The server mimics both OpenAI and Anthropic API structures:
+
+**OpenAI API Endpoints:**
 - `/v1/chat/completions` - Chat completion endpoint (GPT-3.5/4 style)
 - `/v1/completions` - Legacy text completion endpoint (GPT-3 style)
 - `/v1/models` - Model listing endpoint
-- Supports both streaming and non-streaming responses
-- Includes token counting approximation
+
+**Anthropic API Endpoints:**
+- `/v1/messages` - Messages endpoint (Claude style)
+
+Both APIs support:
+- Streaming and non-streaming responses
+- Token counting approximation
+- All standard parameters for each API
 
 ### Request Flow
 

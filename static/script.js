@@ -145,13 +145,34 @@ function displayRequest(request) {
     html += `<div class="detail-item"><span class="label">Max Tokens:</span> <span class="value">${request.data.max_tokens || 'None'}</span></div>`;
     html += `<div class="detail-item"><span class="label">Stream:</span> <span class="value">${request.data.stream || false}</span></div>`;
     
+    // Display Anthropic-specific fields
+    if (request.endpoint.includes('Anthropic')) {
+        if (request.data.system) {
+            html += `<div class="detail-item"><span class="label">System:</span> <span class="value">${escapeHtml(request.data.system)}</span></div>`;
+        }
+        if (request.data.top_p !== undefined && request.data.top_p !== null) {
+            html += `<div class="detail-item"><span class="label">Top P:</span> <span class="value">${request.data.top_p}</span></div>`;
+        }
+        if (request.data.top_k !== undefined && request.data.top_k !== null) {
+            html += `<div class="detail-item"><span class="label">Top K:</span> <span class="value">${request.data.top_k}</span></div>`;
+        }
+        if (request.data.stop_sequences && request.data.stop_sequences.length > 0) {
+            html += `<div class="detail-item"><span class="label">Stop Sequences:</span> <span class="value">${escapeHtml(JSON.stringify(request.data.stop_sequences))}</span></div>`;
+        }
+    }
+    
     // Display messages or prompt
     if (request.data.messages) {
         html += '<div class="messages"><div class="label">Messages:</div>';
         request.data.messages.forEach(msg => {
             html += `<div class="message">`;
             html += `<div class="message-role">${msg.role}:</div>`;
-            html += `<div>${escapeHtml(msg.content)}</div>`;
+            // Handle both string and structured content (Anthropic format)
+            let content = msg.content;
+            if (typeof content === 'object' || Array.isArray(content)) {
+                content = JSON.stringify(content, null, 2);
+            }
+            html += `<div>${escapeHtml(content)}</div>`;
             html += `</div>`;
         });
         html += '</div>';
