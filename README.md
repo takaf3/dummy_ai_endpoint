@@ -4,8 +4,6 @@ A debugging tool that mimics both OpenAI and Anthropic APIs, allowing you to int
 
 Perfect for debugging applications where you don't have access to the source code but need to understand what prompts are being sent and test different response scenarios.
 
-**Now with a macOS menu bar app for easy control!** 🎉
-
 ## 🚀 Features
 
 - **Dual API compatibility**: Supports both OpenAI and Anthropic APIs
@@ -20,7 +18,6 @@ Perfect for debugging applications where you don't have access to the source cod
 - **Zero configuration**: Works as a drop-in replacement for both APIs
 - **Web UI**: Beautiful web interface for managing responses with proper Anthropic tool display
 - **Dual mode**: Choose between CLI prompts or web UI for response management
-- **macOS Menu Bar App**: Control the server directly from your menu bar (start/stop, mode selection, log viewing)
 
 ## 📋 Requirements
 
@@ -40,25 +37,27 @@ pip install -r requirements.txt
 
 ## 🚦 Quick Start
 
-### macOS Menu Bar App (Recommended for macOS)
-1. **Run the menu bar app:**
-```bash
-python menubar_app.py
-```
+### Running with Docker (Recommended)
+1.  **Build the Docker image:**
+    ```bash
+    docker build -t dummy-ai-endpoint .
+    ```
 
-2. **Control from your menu bar:**
-   - Click the 🤖 icon in your menu bar
-   - Select "Start Server" to begin
-   - Choose between CLI or Web UI mode
-   - Access logs and settings directly from the menu
+2.  **Run the Docker container:**
+    ```bash
+    docker run -p 8000:8000 --name dummy-ai-app -d dummy-ai-endpoint
+    ```
+    This starts the server in "web" mode. Access the UI at `http://localhost:8000`.
 
-### CLI Mode (Default)
+### Running Locally
+
+#### CLI Mode (Default)
 1. **Start the server:**
 ```bash
 python dummy_ai_endpoint.py
 ```
 
-### Web UI Mode
+#### Web UI Mode
 1. **Start the server with web UI:**
 ```bash
 python dummy_ai_endpoint.py --mode web
@@ -283,20 +282,6 @@ Options:
   --port PORT       Port to run the server on (default: 8000)
   --host HOST       Host to bind the server to (default: 0.0.0.0)
 ```
-
-### Menu Bar App (macOS)
-```bash
-python menubar_app.py
-```
-
-The menu bar app provides:
-- **Server Control**: Start/stop the server with one click
-- **Mode Selection**: Switch between CLI and Web UI modes
-- **Status Indicator**: Green ✅ when running, red 🔴 when stopped
-- **Quick Web UI Access**: Open the web interface directly
-- **Log Viewer**: View recent logs or open in Console.app
-- **Port Configuration**: Change the server port from the menu
-- **About Info**: View app information and version
 
 ## 💡 Use Cases
 

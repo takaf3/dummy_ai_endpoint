@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+request_log.json
+
+# IDEs
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
+
+# Documentation & Examples
+CLAUDE.md
+README.md
+example_anthropic_client.py
+example_openai_client.py
+
+# Docker
+Dockerfile
+.dockerignore 
