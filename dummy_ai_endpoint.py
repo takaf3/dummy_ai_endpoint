@@ -38,7 +38,7 @@ response_mode = "cli"  # "cli" or "web"
 # Request/Response Models (matching OpenAI's structure)
 class ChatCompletionMessage(BaseModel):
     role: str
-    content: str
+    content: Union[str, List[Dict[str, Any]]]  # Support both text and multimodal content
     name: Optional[str] = None
 
 # Anthropic API Models
@@ -206,9 +206,38 @@ async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Op
         prompt_info += "\nMessages:\n"
         for msg in request_data["messages"]:
             content = msg['content']
-            # Handle structured content for Anthropic
+            # Handle structured content (multimodal)
             if isinstance(content, list):
-                content = str(content)
+                formatted_content = []
+                for item in content:
+                    if isinstance(item, dict):
+                        if item.get('type') == 'text':
+                            formatted_content.append(item.get('text', ''))
+                        elif item.get('type') == 'image':
+                            # Handle Anthropic format
+                            source = item.get('source', {})
+                            if source.get('type') == 'base64':
+                                formatted_content.append(f"[IMAGE: {source.get('media_type', 'unknown')} - base64 data]")
+                            else:
+                                formatted_content.append(f"[IMAGE: {item}]")
+                        elif item.get('type') == 'image_url':
+                            # Handle OpenAI format
+                            image_url = item.get('image_url', {})
+                            if isinstance(image_url, dict):
+                                url = image_url.get('url', '')
+                                if url.startswith('data:'):
+                                    # Base64 image
+                                    media_type = url.split(';')[0].split(':')[1] if ';' in url else 'unknown'
+                                    formatted_content.append(f"[IMAGE: {media_type} - base64 data]")
+                                else:
+                                    formatted_content.append(f"[IMAGE URL: {url}]")
+                            else:
+                                formatted_content.append(f"[IMAGE URL: {image_url}]")
+                        else:
+                            formatted_content.append(str(item))
+                    else:
+                        formatted_content.append(str(item))
+                content = '\n'.join(formatted_content)
             prompt_info += f"[{msg['role']}]: {content}\n"
     elif "prompt" in request_data:
         prompt_info += f"\nPrompt: {request_data['prompt']}\n"
@@ -247,7 +276,21 @@ async def chat_completions(request: ChatCompletionRequest, raw_request: Request)
         )
     
     # Calculate token usage
-    prompt_tokens = sum(count_tokens(msg.content) for msg in request.messages)
+    prompt_tokens = 0
+    for msg in request.messages:
+        if isinstance(msg.content, str):
+            prompt_tokens += count_tokens(msg.content)
+        elif isinstance(msg.content, list):
+            # Handle multimodal content
+            for item in msg.content:
+                if isinstance(item, dict):
+                    if item.get('type') == 'text':
+                        prompt_tokens += count_tokens(item.get('text', ''))
+                    elif item.get('type') in ['image', 'image_url']:
+                        # Approximate tokens for images (OpenAI typically uses ~85 tokens per image)
+                        prompt_tokens += 85
+                else:
+                    prompt_tokens += count_tokens(str(item))
     completion_tokens = count_tokens(user_response)
     
     if stream_param:
@@ -461,9 +504,17 @@ async def anthropic_messages(request: AnthropicRequest, raw_request: Request):
     for msg in request.messages:
         if isinstance(msg.content, str):
             prompt_tokens += count_tokens(msg.content)
-        else:
-            # Handle structured content (e.g., multimodal)
-            prompt_tokens += count_tokens(str(msg.content))
+        elif isinstance(msg.content, list):
+            # Handle structured content (multimodal)
+            for item in msg.content:
+                if isinstance(item, dict):
+                    if item.get('type') == 'text':
+                        prompt_tokens += count_tokens(item.get('text', ''))
+                    elif item.get('type') == 'image':
+                        # Approximate tokens for images
+                        prompt_tokens += 85
+                else:
+                    prompt_tokens += count_tokens(str(item))
     
     completion_tokens = count_tokens(user_response)
     

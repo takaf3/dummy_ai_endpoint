@@ -196,12 +196,48 @@ function displayRequest(request) {
         request.data.messages.forEach(msg => {
             html += `<div class="message">`;
             html += `<div class="message-role">${msg.role}:</div>`;
-            // Handle both string and structured content (Anthropic format)
-            let content = msg.content;
-            if (typeof content === 'object' || Array.isArray(content)) {
-                content = JSON.stringify(content, null, 2);
+            // Handle both string and structured content
+            if (typeof msg.content === 'string') {
+                html += `<div>${escapeHtml(msg.content)}</div>`;
+            } else if (Array.isArray(msg.content)) {
+                // Handle multimodal content
+                html += '<div class="multimodal-content">';
+                msg.content.forEach(item => {
+                    if (item.type === 'text') {
+                        html += `<div class="text-content">${escapeHtml(item.text || item.content || '')}</div>`;
+                    } else if (item.type === 'image') {
+                        // Anthropic format
+                        if (item.source && item.source.type === 'base64') {
+                            html += `<div class="image-content">`;
+                            html += `<img src="data:${item.source.media_type};base64,${item.source.data}" alt="User provided image" style="max-width: 100%; max-height: 400px; margin: 10px 0;">`;
+                            html += `<div class="image-info">Image: ${item.source.media_type}</div>`;
+                            html += `</div>`;
+                        }
+                    } else if (item.type === 'image_url') {
+                        // OpenAI format
+                        const imageUrl = item.image_url.url || item.image_url;
+                        if (imageUrl.startsWith('data:')) {
+                            html += `<div class="image-content">`;
+                            html += `<img src="${imageUrl}" alt="User provided image" style="max-width: 100%; max-height: 400px; margin: 10px 0;">`;
+                            const mediaType = imageUrl.split(';')[0].split(':')[1] || 'unknown';
+                            html += `<div class="image-info">Image: ${mediaType}</div>`;
+                            html += `</div>`;
+                        } else {
+                            html += `<div class="image-content">`;
+                            html += `<img src="${imageUrl}" alt="User provided image" style="max-width: 100%; max-height: 400px; margin: 10px 0;">`;
+                            html += `<div class="image-info">Image URL: ${imageUrl}</div>`;
+                            html += `</div>`;
+                        }
+                    } else {
+                        // Unknown content type
+                        html += `<div class="unknown-content"><pre>${escapeHtml(JSON.stringify(item, null, 2))}</pre></div>`;
+                    }
+                });
+                html += '</div>';
+            } else {
+                // Other object format
+                html += `<div><pre>${escapeHtml(JSON.stringify(msg.content, null, 2))}</pre></div>`;
             }
-            html += `<div>${escapeHtml(content)}</div>`;
             html += `</div>`;
         });
         html += '</div>';
@@ -316,7 +352,25 @@ function addToHistory(request) {
 function getRequestPreview(request) {
     if (request.data.messages && request.data.messages.length > 0) {
         const lastMessage = request.data.messages[request.data.messages.length - 1];
-        return lastMessage.content.substring(0, 100) + (lastMessage.content.length > 100 ? '...' : '');
+        if (typeof lastMessage.content === 'string') {
+            return lastMessage.content.substring(0, 100) + (lastMessage.content.length > 100 ? '...' : '');
+        } else if (Array.isArray(lastMessage.content)) {
+            // Handle multimodal content
+            let preview = '';
+            let hasImage = false;
+            lastMessage.content.forEach(item => {
+                if (item.type === 'text') {
+                    preview += (item.text || item.content || '');
+                } else if (item.type === 'image' || item.type === 'image_url') {
+                    hasImage = true;
+                }
+            });
+            if (hasImage) {
+                preview = '[Contains image] ' + preview;
+            }
+            return preview.substring(0, 100) + (preview.length > 100 ? '...' : '');
+        }
+        return 'Complex content';
     } else if (request.data.prompt) {
         return request.data.prompt.substring(0, 100) + (request.data.prompt.length > 100 ? '...' : '');
     }
@@ -357,7 +411,22 @@ function updateHistoryDisplay() {
                 item.fullRequest.data.messages.forEach(msg => {
                     html += `<div class="message-detail">`;
                     html += `<span class="message-role">${msg.role}:</span> `;
-                    html += `<span class="message-content">${escapeHtml(msg.content)}</span>`;
+                    if (typeof msg.content === 'string') {
+                        html += `<span class="message-content">${escapeHtml(msg.content)}</span>`;
+                    } else if (Array.isArray(msg.content)) {
+                        // Handle multimodal content in history
+                        html += '<div class="multimodal-content">';
+                        msg.content.forEach(item => {
+                            if (item.type === 'text') {
+                                html += `<div class="text-content">${escapeHtml(item.text || item.content || '')}</div>`;
+                            } else if (item.type === 'image' || item.type === 'image_url') {
+                                html += `<div class="image-content">[Image content]</div>`;
+                            }
+                        });
+                        html += '</div>';
+                    } else {
+                        html += `<span class="message-content"><pre>${escapeHtml(JSON.stringify(msg.content, null, 2))}</pre></span>`;
+                    }
                     html += `</div>`;
                 });
                 html += `</div>`;

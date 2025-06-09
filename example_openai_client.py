@@ -5,6 +5,7 @@ Example client showing how to use the OpenAI API Mock Server
 
 from openai import OpenAI
 import time
+import base64
 
 def test_chat_completion():
     """Test chat completion endpoint"""
@@ -355,6 +356,123 @@ def test_models_endpoint():
     for model in models.data:
         print(f"  - {model.id}")
 
+def test_multimodal_base64():
+    """Test multimodal chat with base64 encoded image"""
+    print("\n=== Testing Multimodal Chat (Base64 Image) ===")
+    
+    client = OpenAI(
+        api_key="test-key",
+        base_url="http://localhost:8000/v1"
+    )
+    
+    # Create a simple 1x1 red pixel PNG as base64
+    # This is a minimal valid PNG image
+    red_pixel_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+    
+    response = client.chat.completions.create(
+        model="gpt-4-vision-preview",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "What color is this image?"
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{red_pixel_base64}"
+                        }
+                    }
+                ]
+            }
+        ],
+        max_tokens=100
+    )
+    
+    print(f"Response: {response.choices[0].message.content}")
+
+def test_multimodal_url():
+    """Test multimodal chat with image URL"""
+    print("\n=== Testing Multimodal Chat (Image URL) ===")
+    
+    client = OpenAI(
+        api_key="test-key",
+        base_url="http://localhost:8000/v1"
+    )
+    
+    response = client.chat.completions.create(
+        model="gpt-4-vision-preview",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Describe this image in detail."
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "https://example.com/sample-image.jpg"
+                        }
+                    }
+                ]
+            }
+        ],
+        max_tokens=200
+    )
+    
+    print(f"Response: {response.choices[0].message.content}")
+
+def test_multimodal_multiple():
+    """Test multimodal chat with multiple images and text"""
+    print("\n=== Testing Multimodal Chat (Multiple Images) ===")
+    
+    client = OpenAI(
+        api_key="test-key",
+        base_url="http://localhost:8000/v1"
+    )
+    
+    # Create two different colored pixels
+    red_pixel = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+    blue_pixel = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    
+    response = client.chat.completions.create(
+        model="gpt-4-vision-preview",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "I'm showing you two images. Compare the colors in these images."
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{red_pixel}"
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": "versus"
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{blue_pixel}"
+                        }
+                    }
+                ]
+            }
+        ],
+        max_tokens=150
+    )
+    
+    print(f"Response: {response.choices[0].message.content}")
+
 if __name__ == "__main__":
     print("OpenAI API Mock Server - Example Client")
     print("Make sure the mock server is running on http://localhost:8000")
@@ -392,6 +510,16 @@ if __name__ == "__main__":
         time.sleep(1)
         
         test_tool_use_conversation()
+        time.sleep(1)
+        
+        # Multimodal functionality tests
+        test_multimodal_base64()
+        time.sleep(1)
+        
+        test_multimodal_url()
+        time.sleep(1)
+        
+        test_multimodal_multiple()
         
     except Exception as e:
         print(f"\nError: {e}")

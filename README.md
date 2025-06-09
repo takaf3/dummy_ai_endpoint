@@ -9,6 +9,11 @@ Perfect for debugging applications where you don't have access to the source cod
 - **Dual API compatibility**: Supports both OpenAI and Anthropic APIs
   - OpenAI: `/v1/chat/completions` and `/v1/completions` endpoints
   - Anthropic: `/v1/messages` endpoint
+- **Multimodal Support**: Full support for images in both OpenAI and Anthropic formats
+  - Base64 encoded images
+  - Image URLs (OpenAI format)
+  - Multiple images per message
+  - Proper image display in web UI
 - **Tool Use Support**: Function calling capabilities for both OpenAI and Anthropic APIs
 - **Request logging**: All requests are logged to console, file, and JSON format
 - **Interactive response control**: Manually input responses for each request
@@ -248,6 +253,82 @@ response = client.messages.create(
     ],
     tools=tools,
     tool_choice={"type": "tool", "name": "get_weather"}
+)
+```
+
+**OpenAI Multimodal Example:**
+```python
+from openai import OpenAI
+import base64
+
+client = OpenAI(
+    api_key="test-key",
+    base_url="http://localhost:8000/v1"
+)
+
+# Load and encode an image
+with open("image.jpg", "rb") as image_file:
+    base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+
+response = client.chat.completions.create(
+    model="gpt-4-vision-preview",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "What's in this image?"
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}"
+                    }
+                }
+            ]
+        }
+    ],
+    max_tokens=300
+)
+```
+
+**Anthropic Multimodal Example:**
+```python
+from anthropic import Anthropic
+import base64
+
+client = Anthropic(
+    api_key="test-key",
+    base_url="http://localhost:8000"
+)
+
+# Load and encode an image
+with open("image.jpg", "rb") as image_file:
+    base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+
+response = client.messages.create(
+    model="claude-3-opus-20240229",
+    max_tokens=1024,
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Describe this image in detail."
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": base64_image
+                    }
+                }
+            ]
+        }
+    ]
 )
 ```
 

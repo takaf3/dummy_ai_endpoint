@@ -6,6 +6,7 @@ This demonstrates how to make requests to the Anthropic Messages API.
 
 import json
 import requests
+import base64
 from typing import Optional, List, Dict, Any, Union
 
 # Configuration
@@ -356,9 +357,12 @@ def main():
             elif content_block.get('type') == 'text':
                 print(f"Text: {content_block['text']}")
     
-    # Example 9: Structured content (multimodal placeholder)
-    print("\n\n9. Structured content example:")
+    # Example 9: Multimodal with base64 image
+    print("\n\n9. Multimodal example - Base64 image:")
     print("-" * 40)
+    
+    # Create a simple 1x1 red pixel PNG as base64
+    red_pixel_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
     
     response = create_message(
         messages=[
@@ -367,20 +371,130 @@ def main():
                 "content": [
                     {
                         "type": "text",
-                        "text": "What do you see in this image?"
+                        "text": "What color is this image?"
                     },
                     {
                         "type": "image",
                         "source": {
                             "type": "base64",
-                            "media_type": "image/jpeg",
-                            "data": "base64_encoded_image_data_here"
+                            "media_type": "image/png",
+                            "data": red_pixel_base64
                         }
                     }
                 ]
             }
         ],
-        max_tokens=200
+        model="claude-3-opus-20240229",
+        max_tokens=100
+    )
+    
+    if response:
+        print("Response received:")
+        print(f"Content: {response['content'][0]['text']}")
+    
+    # Example 10: Multiple images and text
+    print("\n\n10. Multimodal example - Multiple images:")
+    print("-" * 40)
+    
+    # Create two different colored pixels
+    blue_pixel_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    
+    response = create_message(
+        messages=[
+            {
+                "role": "user", 
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "I'm showing you two images. The first image is:"
+                    },
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/png",
+                            "data": red_pixel_base64
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": "And the second image is:"
+                    },
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/png",
+                            "data": blue_pixel_base64
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": "Can you compare the colors in these two images?"
+                    }
+                ]
+            }
+        ],
+        model="claude-3-opus-20240229",
+        max_tokens=150
+    )
+    
+    if response:
+        print("Response received:")
+        print(f"Content: {response['content'][0]['text']}")
+    
+    # Example 11: Multimodal conversation
+    print("\n\n11. Multimodal conversation example:")
+    print("-" * 40)
+    
+    # Create a green pixel
+    green_pixel_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    
+    multimodal_conversation = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "I'm going to show you some colored pixels. Here's the first one:"
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/png",
+                        "data": red_pixel_base64
+                    }
+                }
+            ]
+        },
+        {
+            "role": "assistant",
+            "content": "I can see a red pixel in the image you've shown me."
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Good! Now here's another one. What color is this?"
+                },
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/png",
+                        "data": green_pixel_base64
+                    }
+                }
+            ]
+        }
+    ]
+    
+    response = create_message(
+        messages=multimodal_conversation,
+        model="claude-3-sonnet-20240229",
+        max_tokens=100
     )
     
     if response:
@@ -388,11 +502,16 @@ def main():
         print(f"Content: {response['content'][0]['text']}")
     
     print("\n" + "=" * 80)
-    print("Examples completed! Tool use examples demonstrate:")
+    print("Examples completed!")
+    print("\nTool use examples demonstrate:")
     print("- Basic tool definition and usage")
     print("- Forced tool choice")
     print("- Multiple tools selection")
     print("- Tool result handling in conversations")
+    print("\nMultimodal examples demonstrate:")
+    print("- Single image with text")
+    print("- Multiple images in one message")
+    print("- Multimodal conversations")
     print("=" * 80)
 
 
