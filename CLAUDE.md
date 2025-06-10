@@ -37,57 +37,68 @@ docker run -p 8000:8000 --name dummy-ai-app -d dummy-ai-endpoint
 
 ## Architecture Overview
 
-This is a FastAPI-based mock server that mimics both OpenAI and Anthropic APIs, intercepting requests and allowing manual response control. The application operates in two modes:
+This is a FastAPI-based mock server that mimics both OpenAI and Anthropic APIs, intercepting requests and allowing manual response control. The application operates in two modes: CLI and Web UI.
 
 ### Core Components
 
 - **`dummy_ai_endpoint.py`**: Main server file containing all API endpoints and response handling logic
-- **`static/`**: Web UI assets (HTML, CSS, JS) for the web mode interface
+- **`static/`**: Web UI assets (HTML, CSS, JS) for the web mode interface with dark mode support
 - **`example_openai_client.py`**: Demonstration client showing how to interact with the OpenAI API mock
 - **`example_anthropic_client.py`**: Demonstration client showing how to interact with the Anthropic API mock
 
-### Dual Response Modes
+### Key Features
 
-The server supports two response modes controlled by the `--mode` flag:
+#### Multimodal Support
+The server handles images in both OpenAI and Anthropic formats:
+- **OpenAI**: Uses `image_url` format with base64 data URLs or external URLs
+- **Anthropic**: Uses `image` content blocks with base64 source data
+- Images are properly displayed in the web UI and truncated in logs (dummy_ai_endpoint.py:108-157)
 
-1. **CLI Mode (`--mode cli`)**: Default mode where responses are entered via terminal input
-2. **Web Mode (`--mode web`)**: Browser-based UI for managing responses via WebSocket communication
+#### Tool/Function Calling
+Both APIs support tool use:
+- **OpenAI**: `tools` and `tool_choice` parameters in chat completions
+- **Anthropic**: `tools` and `tool_choice` parameters in messages API
+- Properly formatted in web UI for easy debugging
 
-### API Compatibility
+#### Response Modes
 
-The server mimics both OpenAI and Anthropic API structures:
+1. **CLI Mode (`--mode cli`)**: 
+   - Default mode where responses are entered via terminal
+   - Quick default response with just ENTER key
+   - Multi-line responses with 'END' delimiter
 
-**OpenAI API Endpoints:**
-- `/v1/chat/completions` - Chat completion endpoint (GPT-3.5/4 style)
-- `/v1/completions` - Legacy text completion endpoint (GPT-3 style)
-- `/v1/models` - Model listing endpoint
+2. **Web Mode (`--mode web`)**: 
+   - Browser-based UI with WebSocket real-time updates
+   - Dark mode support with system preference detection
+   - Request history tracking
+   - Three response options: Send Response, Send Default, Send Error
 
-**Anthropic API Endpoints:**
-- `/v1/messages` - Messages endpoint (Claude style)
+### Request Processing Pipeline
 
-Both APIs support:
-- Streaming and non-streaming responses
-- Token counting approximation
-- All standard parameters for each API
+1. **Request Reception**: FastAPI endpoints receive requests at `/v1/chat/completions`, `/v1/completions`, or `/v1/messages`
+2. **Request Logging**: `log_request()` function logs to console, file, and JSON with base64 truncation
+3. **Response Handling**: 
+   - CLI: `get_cli_response()` prompts for terminal input
+   - Web: `get_web_response()` creates pending request and waits for WebSocket response
+4. **Token Counting**: Simple approximation using word count * 1.3
+5. **Response Formatting**: Matches exact OpenAI/Anthropic response structures including streaming
 
-### Request Flow
+### WebSocket Communication (Web Mode)
 
-1. Client makes request to mock server
-2. Request is logged to console, file (`dummy_ai_endpoint_requests.log`), and JSON (`request_log.json`)
-3. Server waits for manual response input (CLI or web UI)
-4. Server returns formatted response matching OpenAI's structure
+- **Connection**: Clients connect to `/ws` endpoint
+- **Request Notification**: New requests broadcast to all connected clients
+- **Response Flow**: Client sends response → Server updates pending request → Original request receives response
+- **State Management**: `pending_requests` dict and `websocket_clients` list track active connections
 
-### Global State Management
+### Streaming Implementation
 
-- `pending_requests`: Dictionary storing active web UI requests awaiting responses
-- `websocket_clients`: List of connected WebSocket clients for real-time updates
-- `response_mode`: Current mode ("cli" or "web")
+Both APIs support Server-Sent Events (SSE) streaming:
+- **OpenAI**: Sends chat completion chunks with `data:` prefix
+- **Anthropic**: Sends typed events (message_start, content_block_delta, etc.)
+- Simulated delays between chunks for realistic streaming behavior
 
-### Logging System
+### Error Handling
 
-All requests are automatically logged in multiple formats:
-- Console output with colored formatting
-- Text file: `dummy_ai_endpoint_requests.log`
-- JSON file: `request_log.json` for programmatic parsing
-
-The server uses Python's standard logging module with both file and console handlers configured.
+- Invalid requests return proper API-formatted error responses
+- WebSocket disconnections are gracefully handled
+- Web UI can send custom error responses for testing error handling

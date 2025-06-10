@@ -22,6 +22,7 @@ Perfect for debugging applications where you don't have access to the source cod
 - **Token counting**: Approximates token usage similar to OpenAI and Anthropic
 - **Zero configuration**: Works as a drop-in replacement for both APIs
 - **Web UI**: Beautiful web interface for managing responses with proper Anthropic tool display
+- **Dark Mode**: Automatic dark mode support with system preference detection and manual toggle
 - **Dual mode**: Choose between CLI prompts or web UI for response management
 
 ## 📋 Requirements
@@ -128,6 +129,7 @@ Or press ENTER to use default message: 'Hello! I'm the AI assistant. How can I h
 2. Type your response in the text area
 3. Click "Send Response", "Send Default", or "Send Error"
 4. View request history and details
+5. Toggle between light and dark mode with the 🌙/☀️ button
 
 ## 📝 Example Usage
 
@@ -341,6 +343,8 @@ All requests are automatically logged to:
 | **Console** | Real-time colored output |
 | **`dummy_ai_endpoint_requests.log`** | Detailed text logs |
 | **`request_log.json`** | JSON format for parsing |
+
+Base64 image data is automatically truncated in logs to keep them readable while still showing the media type and first few characters for identification.
 
 ## 🔌 API Endpoints
 

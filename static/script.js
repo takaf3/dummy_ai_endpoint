@@ -610,10 +610,66 @@ function sendDefaultResponse() {
     resetResponseUI();
 }
 
+// Theme management
+function initTheme() {
+    // Check for saved theme preference or default to system preference
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    // Determine initial theme
+    let theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+    
+    // Apply theme
+    setTheme(theme);
+    
+    // Listen for system theme changes if no manual preference is set
+    if (!savedTheme) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+    }
+}
+
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    updateThemeToggle(theme);
+}
+
+function updateThemeToggle(theme) {
+    const themeIcon = document.getElementById('theme-icon');
+    const themeText = document.getElementById('theme-text');
+    
+    if (theme === 'dark') {
+        themeIcon.textContent = '☀️';
+        themeText.textContent = 'Light';
+    } else {
+        themeIcon.textContent = '🌙';
+        themeText.textContent = 'Dark';
+    }
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize theme
+    initTheme();
+    
+    // Theme toggle event listener
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+    
+    // WebSocket connection
     connectWebSocket();
     
+    // Button event listeners
     document.getElementById('send-response').addEventListener('click', sendResponse);
     document.getElementById('send-default').addEventListener('click', sendDefaultResponse);
     document.getElementById('send-error').addEventListener('click', sendError);
