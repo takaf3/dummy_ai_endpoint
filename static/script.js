@@ -209,7 +209,7 @@ function displayRequest(request) {
                         // Anthropic format
                         if (item.source && item.source.type === 'base64') {
                             html += `<div class="image-content">`;
-                            html += `<img src="data:${item.source.media_type};base64,${item.source.data}" alt="User provided image" style="max-width: 100%; max-height: 400px; margin: 10px 0;">`;
+                            html += `<img src="data:${item.source.media_type};base64,${item.source.data}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
                             html += `<div class="image-info">Image: ${item.source.media_type}</div>`;
                             html += `</div>`;
                         }
@@ -218,13 +218,14 @@ function displayRequest(request) {
                         const imageUrl = item.image_url.url || item.image_url;
                         if (imageUrl.startsWith('data:')) {
                             html += `<div class="image-content">`;
-                            html += `<img src="${imageUrl}" alt="User provided image" style="max-width: 100%; max-height: 400px; margin: 10px 0;">`;
+                            html += `<img src="${imageUrl}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
                             const mediaType = imageUrl.split(';')[0].split(':')[1] || 'unknown';
                             html += `<div class="image-info">Image: ${mediaType}</div>`;
                             html += `</div>`;
                         } else {
                             html += `<div class="image-content">`;
-                            html += `<img src="${imageUrl}" alt="User provided image" style="max-width: 100%; max-height: 400px; margin: 10px 0;">`;
+                            // For non-data URLs, we can keep them larger or also constrain them
+                            html += `<img src="${imageUrl}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
                             html += `<div class="image-info">Image URL: ${imageUrl}</div>`;
                             html += `</div>`;
                         }

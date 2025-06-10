@@ -6,7 +6,7 @@
       "content": [
         {
           "type": "text",
-          "text": "What's in this image?"
+          "text": "What's in this image? (OpenAI test)"
         },
         {
           "type": "image_url",

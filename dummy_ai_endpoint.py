@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import sys
+import copy
 import time
 import uuid
 from datetime import datetime
@@ -105,18 +106,51 @@ class Usage(BaseModel):
     total_tokens: int
 
 def log_request(endpoint: str, request_data: Dict[str, Any]):
-    """Log the incoming request details"""
-    log_entry = {
+    """Log the incoming request details, truncating base64 data in logs."""
+    # Create a deep copy to avoid modifying the original request data
+    request_data_copy = copy.deepcopy(request_data)
+
+    # Truncate base64 data in the copy
+    if "messages" in request_data_copy:
+        for message in request_data_copy["messages"]:
+            if isinstance(message.get("content"), list):
+                for content_item in message["content"]:
+                    if not isinstance(content_item, dict):
+                        continue
+
+                    # OpenAI image_url format
+                    if content_item.get("type") == "image_url":
+                        image_url_dict = content_item.get("image_url", {})
+                        if isinstance(image_url_dict, dict):
+                            url = image_url_dict.get("url", "")
+                            if url.startswith("data:") and ";base64," in url:
+                                parts = url.split(";base64,", 1)
+                                if len(parts) == 2:
+                                    media_type_part = parts[0]
+                                    base64_string = parts[1]
+                                    if len(base64_string) > 30:
+                                        truncated_base64 = base64_string[:30] + "... (truncated)"
+                                        image_url_dict["url"] = f"{media_type_part};base64,{truncated_base64}"
+
+                    # Anthropic image format
+                    elif content_item.get("type") == "image":
+                        source = content_item.get("source", {})
+                        if isinstance(source, dict) and source.get("type") == "base64":
+                            base64_string = source.get("data", "")
+                            if len(base64_string) > 30:
+                                source["data"] = base64_string[:30] + "... (truncated)"
+
+    log_entry_copy = {
         "timestamp": datetime.now().isoformat(),
         "endpoint": endpoint,
-        "request": request_data
+        "request": request_data_copy  # Use the modified copy for logging
     }
     logger.info(f"\n{'='*80}\nNEW REQUEST TO {endpoint}\n{'='*80}")
-    logger.info(json.dumps(log_entry, indent=2))
+    logger.info(json.dumps(log_entry_copy, indent=2))
     
-    # Also save to a JSON file for easy parsing
+    # Also save to a JSON file for easy parsing, using the modified copy
     with open('request_log.json', 'a') as f:
-        f.write(json.dumps(log_entry) + '\n')
+        f.write(json.dumps(log_entry_copy) + '\n')
 
 def get_cli_response(prompt_info: str) -> str:
     """Get response from user via terminal"""
