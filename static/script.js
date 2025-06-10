@@ -195,7 +195,7 @@ function displayRequest(request) {
         html += '<div class="messages"><div class="label">Messages:</div>';
         request.data.messages.forEach(msg => {
             html += `<div class="message">`;
-            html += `<div class="message-role">${msg.role}:</div>`;
+            html += `<div class="message-role">${escapeHtml(msg.role)}:</div>`;
             // Handle both string and structured content
             if (typeof msg.content === 'string') {
                 html += `<div>${escapeHtml(msg.content)}</div>`;
@@ -209,25 +209,30 @@ function displayRequest(request) {
                         // Anthropic format
                         if (item.source && item.source.type === 'base64') {
                             html += `<div class="image-content">`;
-                            html += `<img src="data:${item.source.media_type};base64,${item.source.data}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
-                            html += `<div class="image-info">Image: ${item.source.media_type}</div>`;
+                            html += `<img src="data:${escapeHtml(item.source.media_type)};base64,${item.source.data}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
+                            html += `<div class="image-info">Image: ${escapeHtml(item.source.media_type)}</div>`;
                             html += `</div>`;
+                        } else {
+                            html += `<div class="unknown-content">Invalid image source in array: <pre>${escapeHtml(JSON.stringify(item.source, null, 2))}</pre></div>`;
                         }
                     } else if (item.type === 'image_url') {
                         // OpenAI format
-                        const imageUrl = item.image_url.url || item.image_url;
-                        if (imageUrl.startsWith('data:')) {
-                            html += `<div class="image-content">`;
-                            html += `<img src="${imageUrl}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
-                            const mediaType = imageUrl.split(';')[0].split(':')[1] || 'unknown';
-                            html += `<div class="image-info">Image: ${mediaType}</div>`;
-                            html += `</div>`;
+                        const imageUrl = item.image_url && item.image_url.url ? item.image_url.url : item.image_url;
+                        if (typeof imageUrl === 'string') {
+                            if (imageUrl.startsWith('data:')) {
+                                html += `<div class="image-content">`;
+                                html += `<img src="${imageUrl}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
+                                const mediaType = imageUrl.split(';')[0].split(':')[1] || 'unknown';
+                                html += `<div class="image-info">Image: ${escapeHtml(mediaType)}</div>`;
+                                html += `</div>`;
+                            } else {
+                                html += `<div class="image-content">`;
+                                html += `<img src="${escapeHtml(imageUrl)}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
+                                html += `<div class="image-info">Image URL: ${escapeHtml(imageUrl)}</div>`;
+                                html += `</div>`;
+                            }
                         } else {
-                            html += `<div class="image-content">`;
-                            // For non-data URLs, we can keep them larger or also constrain them
-                            html += `<img src="${imageUrl}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
-                            html += `<div class="image-info">Image URL: ${imageUrl}</div>`;
-                            html += `</div>`;
+                            html += `<div class="unknown-content">Invalid image_url format in array: <pre>${escapeHtml(JSON.stringify(item.image_url, null, 2))}</pre></div>`;
                         }
                     } else {
                         // Unknown content type
@@ -235,6 +240,44 @@ function displayRequest(request) {
                     }
                 });
                 html += '</div>';
+            } else if (typeof msg.content === 'object' && msg.content !== null && (msg.content.type === 'image' || msg.content.type === 'image_url')) {
+                // Handle single image object (similar to items in multimodal array)
+                html += '<div class="multimodal-content">'; // Keep consistent structure
+                const item = msg.content; // Treat the single object as an item
+                if (item.type === 'image') {
+                    // Anthropic format
+                    if (item.source && item.source.type === 'base64') {
+                        html += `<div class="image-content">`;
+                        // Data URLs should not be escaped in src attribute
+                        html += `<img src="data:${escapeHtml(item.source.media_type)};base64,${item.source.data}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
+                        html += `<div class="image-info">Image: ${escapeHtml(item.source.media_type)}</div>`;
+                        html += `</div>`;
+                    } else {
+                         html += `<div class="unknown-content">Invalid image source: <pre>${escapeHtml(JSON.stringify(item.source, null, 2))}</pre></div>`;
+                    }
+                } else if (item.type === 'image_url') {
+                    // OpenAI format
+                    const imageUrl = item.image_url && item.image_url.url ? item.image_url.url : item.image_url;
+                    if (typeof imageUrl === 'string') {
+                        if (imageUrl.startsWith('data:')) {
+                            html += `<div class="image-content">`;
+                            // Data URLs should not be escaped in src attribute
+                            html += `<img src="${imageUrl}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
+                            const mediaType = imageUrl.split(';')[0].split(':')[1] || 'unknown';
+                            html += `<div class="image-info">Image: ${escapeHtml(mediaType)}</div>`;
+                            html += `</div>`;
+                        } else {
+                            html += `<div class="image-content">`;
+                            // Regular URLs should be escaped in src attribute and when displayed
+                            html += `<img src="${escapeHtml(imageUrl)}" alt="User provided image" style="max-width: 200px; max-height: 200px; margin: 10px 0;">`;
+                            html += `<div class="image-info">Image URL: ${escapeHtml(imageUrl)}</div>`;
+                            html += `</div>`;
+                        }
+                    } else {
+                        html += `<div class="unknown-content">Invalid image_url format: <pre>${escapeHtml(JSON.stringify(item.image_url, null, 2))}</pre></div>`;
+                    }
+                }
+                html += '</div>'; // Close multimodal-content
             } else {
                 // Other object format
                 html += `<div><pre>${escapeHtml(JSON.stringify(msg.content, null, 2))}</pre></div>`;
@@ -411,7 +454,7 @@ function updateHistoryDisplay() {
                 html += `<strong>Messages:</strong>`;
                 item.fullRequest.data.messages.forEach(msg => {
                     html += `<div class="message-detail">`;
-                    html += `<span class="message-role">${msg.role}:</span> `;
+                    html += `<span class="message-role">${escapeHtml(msg.role)}:</span> `;
                     if (typeof msg.content === 'string') {
                         html += `<span class="message-content">${escapeHtml(msg.content)}</span>`;
                     } else if (Array.isArray(msg.content)) {
@@ -420,11 +463,74 @@ function updateHistoryDisplay() {
                         msg.content.forEach(item => {
                             if (item.type === 'text') {
                                 html += `<div class="text-content">${escapeHtml(item.text || item.content || '')}</div>`;
-                            } else if (item.type === 'image' || item.type === 'image_url') {
-                                html += `<div class="image-content">[Image content]</div>`;
+                            } else if (item.type === 'image') {
+                                // Anthropic format
+                                if (item.source && item.source.type === 'base64') {
+                                    html += `<div class="image-content">`;
+                                    html += `<img src="data:${escapeHtml(item.source.media_type)};base64,${item.source.data}" alt="History image" style="max-width: 150px; max-height: 150px; margin: 5px 0;">`; // Slightly smaller for history
+                                    html += `<div class="image-info-history">Image: ${escapeHtml(item.source.media_type)}</div>`;
+                                    html += `</div>`;
+                                } else {
+                                    html += `<div class="unknown-content-history">Invalid image source in history: <pre>${escapeHtml(JSON.stringify(item.source, null, 2))}</pre></div>`;
+                                }
+                            } else if (item.type === 'image_url') {
+                                // OpenAI format
+                                const imageUrl = item.image_url && item.image_url.url ? item.image_url.url : item.image_url;
+                                if (typeof imageUrl === 'string') {
+                                    if (imageUrl.startsWith('data:')) {
+                                        html += `<div class="image-content">`;
+                                        html += `<img src="${imageUrl}" alt="History image" style="max-width: 150px; max-height: 150px; margin: 5px 0;">`;
+                                        const mediaType = imageUrl.split(';')[0].split(':')[1] || 'unknown';
+                                        html += `<div class="image-info-history">Image: ${escapeHtml(mediaType)}</div>`;
+                                        html += `</div>`;
+                                    } else {
+                                        html += `<div class="image-content">`;
+                                        html += `<img src="${escapeHtml(imageUrl)}" alt="History image" style="max-width: 150px; max-height: 150px; margin: 5px 0;">`;
+                                        html += `<div class="image-info-history">Image URL: ${escapeHtml(imageUrl)}</div>`;
+                                        html += `</div>`;
+                                    }
+                                } else {
+                                    html += `<div class="unknown-content-history">Invalid image_url format in history array: <pre>${escapeHtml(JSON.stringify(item.image_url, null, 2))}</pre></div>`;
+                                }
+                            } else {
+                                // Fallback for other unknown item types within content array
+                                html += `<div class="unknown-content-history"><pre>${escapeHtml(JSON.stringify(item, null, 2))}</pre></div>`;
                             }
                         });
                         html += '</div>';
+                    } else if (typeof msg.content === 'object' && msg.content !== null && (msg.content.type === 'image' || msg.content.type === 'image_url')) {
+                        // Handle single image object in history
+                        html += '<div class="multimodal-content">'; // Keep consistent structure
+                        const item = msg.content;
+                        if (item.type === 'image') {
+                            if (item.source && item.source.type === 'base64') {
+                                html += `<div class="image-content">`;
+                                html += `<img src="data:${escapeHtml(item.source.media_type)};base64,${item.source.data}" alt="History image" style="max-width: 150px; max-height: 150px; margin: 5px 0;">`;
+                                html += `<div class="image-info-history">Image: ${escapeHtml(item.source.media_type)}</div>`;
+                                html += `</div>`;
+                            } else {
+                                 html += `<div class="unknown-content-history">Invalid image source in history: <pre>${escapeHtml(JSON.stringify(item.source, null, 2))}</pre></div>`;
+                            }
+                        } else if (item.type === 'image_url') {
+                            const imageUrl = item.image_url && item.image_url.url ? item.image_url.url : item.image_url;
+                            if (typeof imageUrl === 'string') {
+                                if (imageUrl.startsWith('data:')) {
+                                    html += `<div class="image-content">`;
+                                    html += `<img src="${imageUrl}" alt="History image" style="max-width: 150px; max-height: 150px; margin: 5px 0;">`;
+                                    const mediaType = imageUrl.split(';')[0].split(':')[1] || 'unknown';
+                                    html += `<div class="image-info-history">Image: ${escapeHtml(mediaType)}</div>`;
+                                    html += `</div>`;
+                                } else {
+                                    html += `<div class="image-content">`;
+                                    html += `<img src="${escapeHtml(imageUrl)}" alt="History image" style="max-width: 150px; max-height: 150px; margin: 5px 0;">`;
+                                    html += `<div class="image-info-history">Image URL: ${escapeHtml(imageUrl)}</div>`;
+                                    html += `</div>`;
+                                }
+                            } else {
+                                html += `<div class="unknown-content-history">Invalid image_url format in history: <pre>${escapeHtml(JSON.stringify(item.image_url, null, 2))}</pre></div>`;
+                            }
+                        }
+                        html += '</div>'; // Close multimodal-content
                     } else {
                         html += `<span class="message-content"><pre>${escapeHtml(JSON.stringify(msg.content, null, 2))}</pre></span>`;
                     }
