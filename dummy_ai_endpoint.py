@@ -217,7 +217,9 @@ async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Op
                             # Handle Anthropic format
                             source = item.get('source', {})
                             if source.get('type') == 'base64':
-                                formatted_content.append(f"[IMAGE: {source.get('media_type', 'unknown')} - base64 data]")
+                                base64_data = source.get('data', '')
+                                truncated_base64 = base64_data[:30]
+                                formatted_content.append(f"[IMAGE: {source.get('media_type', 'unknown')} - base64 data: {truncated_base64}... (truncated)]")
                             else:
                                 formatted_content.append(f"[IMAGE: {item}]")
                         elif item.get('type') == 'image_url':
@@ -228,7 +230,9 @@ async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Op
                                 if url.startswith('data:'):
                                     # Base64 image
                                     media_type = url.split(';')[0].split(':')[1] if ';' in url else 'unknown'
-                                    formatted_content.append(f"[IMAGE: {media_type} - base64 data]")
+                                    base64_data = url.split(',')[-1] if ',' in url else ''
+                                    truncated_base64 = base64_data[:30]
+                                    formatted_content.append(f"[IMAGE: {media_type} - base64 data: {truncated_base64}... (truncated)]")
                                 else:
                                     formatted_content.append(f"[IMAGE URL: {url}]")
                             else:
