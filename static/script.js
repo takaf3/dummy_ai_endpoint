@@ -658,6 +658,66 @@ function toggleTheme() {
     localStorage.setItem('theme', newTheme);
 }
 
+// Export functions
+function exportToJSON() {
+    if (requestHistory.length === 0) {
+        alert('No requests to export');
+        return;
+    }
+    
+    const exportData = requestHistory.map(item => ({
+        timestamp: item.timestamp,
+        endpoint: item.endpoint,
+        model: item.model,
+        requestId: item.fullRequest.id,
+        requestData: item.fullRequest.data
+    }));
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `ai_requests_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+}
+
+function exportToCSV() {
+    if (requestHistory.length === 0) {
+        alert('No requests to export');
+        return;
+    }
+    
+    // CSV headers
+    const headers = ['Timestamp', 'Endpoint', 'Model', 'Request ID', 'Temperature', 'Max Tokens', 'Stream', 'Message Preview'];
+    
+    // Convert data to CSV rows
+    const rows = requestHistory.map(item => {
+        const messagePreview = getRequestPreview(item.fullRequest).replace(/"/g, '""'); // Escape quotes
+        
+        return [
+            item.timestamp,
+            item.endpoint,
+            item.model,
+            item.fullRequest.id,
+            item.fullRequest.data.temperature ?? '',
+            item.fullRequest.data.max_tokens || '',
+            item.fullRequest.data.stream || false,
+            `"${messagePreview}"`
+        ].join(',');
+    });
+    
+    // Combine headers and rows
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    const dataBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `ai_requests_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize theme
@@ -673,6 +733,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('send-response').addEventListener('click', sendResponse);
     document.getElementById('send-default').addEventListener('click', sendDefaultResponse);
     document.getElementById('send-error').addEventListener('click', sendError);
+    
+    // Export button event listeners
+    document.getElementById('export-json').addEventListener('click', exportToJSON);
+    document.getElementById('export-csv').addEventListener('click', exportToCSV);
     
     // Allow Ctrl+Enter to send response
     document.getElementById('response-input').addEventListener('keydown', (e) => {

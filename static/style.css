@@ -289,6 +289,34 @@ header p {
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+.history-header-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.history-header-controls h2 {
+    margin: 0;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-export {
+    background: var(--btn-primary-bg);
+    color: white;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.btn-export:hover {
+    background: var(--btn-primary-hover);
+}
+
 .history-list {
     max-height: 400px;
     overflow-y: auto;

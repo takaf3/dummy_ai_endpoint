@@ -60,7 +60,13 @@
         </div>
 
         <div class="history-section">
-            <h2>📜 Request History</h2>
+            <div class="history-header-controls">
+                <h2>📜 Request History</h2>
+                <div class="export-buttons">
+                    <button id="export-json" class="btn btn-export" title="Export as JSON">Export JSON</button>
+                    <button id="export-csv" class="btn btn-export" title="Export as CSV">Export CSV</button>
+                </div>
+            </div>
             <div id="history-list" class="history-list">
                 <p class="no-history">No requests yet</p>
             </div>
