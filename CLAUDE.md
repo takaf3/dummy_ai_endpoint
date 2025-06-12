@@ -26,6 +26,9 @@ python example_openai_client.py
 
 # Test Anthropic API compatibility (requires server to be running)
 python example_anthropic_client.py
+
+# Test OpenAI Embeddings API (requires server to be running)
+python example_embeddings_client.py
 ```
 
 ### Docker Deployment
@@ -45,8 +48,24 @@ This is a FastAPI-based mock server that mimics both OpenAI and Anthropic APIs, 
 - **`static/`**: Web UI assets (HTML, CSS, JS) for the web mode interface with dark mode support
 - **`example_openai_client.py`**: Demonstration client showing how to interact with the OpenAI API mock
 - **`example_anthropic_client.py`**: Demonstration client showing how to interact with the Anthropic API mock
+- **`example_embeddings_client.py`**: Demonstration client showing how to use the embeddings API
+- **`sample_embeddings.json`**: Example file for testing file-based embeddings responses
 
 ### Key Features
+
+#### Embeddings Support
+The server now supports OpenAI's embeddings API with multiple response modes:
+- **Random**: Generates normalized random vectors
+- **Zero**: Returns zero vectors for testing edge cases
+- **Sequential**: Creates sequential pattern embeddings
+- **Hash-based**: Generates deterministic embeddings based on input text
+- **File-based**: Loads pre-defined embeddings from JSON files
+- **Custom**: Allows manual JSON input for specific test cases
+
+Supported models with appropriate dimensions:
+- text-embedding-ada-002 (1536 dimensions)
+- text-embedding-3-small (1536 dimensions)
+- text-embedding-3-large (3072 dimensions)
 
 #### Multimodal Support
 The server handles images in both OpenAI and Anthropic formats:

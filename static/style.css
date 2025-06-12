@@ -701,3 +701,159 @@ header p {
         display: none;
     }
 }
+
+/* Embedding options */
+.embedding-options {
+    margin: 20px 0;
+    padding: 20px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    box-shadow: 0 2px 4px var(--shadow);
+    transition: all 0.3s ease;
+}
+
+.embedding-options:hover {
+    box-shadow: 0 4px 8px var(--shadow);
+}
+
+.embedding-options h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-heading);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.embedding-options h3::before {
+    content: "🔢";
+    font-size: 20px;
+}
+
+.embedding-options select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px;
+    padding-right: 40px;
+}
+
+.embedding-options select:hover {
+    border-color: var(--btn-primary-bg);
+    background-color: var(--bg-hover);
+}
+
+.embedding-options select:focus {
+    outline: none;
+    border-color: var(--btn-primary-bg);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+/* Dark mode arrow color */
+[data-theme="dark"] .embedding-options select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e0e0e0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+#embedding-file-input,
+#embedding-custom-input {
+    margin-top: 15px;
+    padding: 15px;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border-dashed);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+#embedding-file-input:not(.hidden),
+#embedding-custom-input:not(.hidden) {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#embedding-filepath {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+#embedding-filepath:focus {
+    outline: none;
+    border-color: var(--btn-primary-bg);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+#embedding-filepath::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+#embedding-custom-json {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--code-bg);
+    color: var(--text-primary);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    transition: all 0.2s ease;
+    resize: vertical;
+    min-height: 100px;
+}
+
+#embedding-custom-json:focus {
+    outline: none;
+    border-color: var(--btn-primary-bg);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+#embedding-custom-json::placeholder {
+    color: var(--text-muted);
+    font-style: normal;
+}
+
+/* Labels for embedding inputs */
+#embedding-file-input label,
+#embedding-custom-input label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Option styling in select */
+.embedding-options option {
+    padding: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}

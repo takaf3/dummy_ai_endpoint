@@ -11,12 +11,17 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 from queue import Queue
 import threading
+import hashlib
+import os
+import base64
+import struct
 
 import uvicorn
 from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+import numpy as np
 
 # Configure logging
 logging.basicConfig(
@@ -35,6 +40,15 @@ app = FastAPI(title="Dummy AI Endpoint - OpenAI & Anthropic Compatible")
 pending_requests = {}
 websocket_clients = []
 response_mode = "cli"  # "cli" or "web"
+
+# Embedding model dimensions
+EMBEDDING_DIMENSIONS = {
+    "text-embedding-ada-002": 1536,
+    "text-embedding-3-small": 1536,
+    "text-embedding-3-large": 3072,
+    "voyage-2": 1024,
+    "cohere-embed": 768
+}
 
 # Request/Response Models (matching OpenAI's structure)
 class ChatCompletionMessage(BaseModel):
@@ -97,6 +111,14 @@ class CompletionRequest(BaseModel):
     frequency_penalty: Optional[float] = None
     best_of: Optional[int] = None
     logit_bias: Optional[Dict[str, float]] = None
+    user: Optional[str] = None
+
+# Embeddings Models
+class EmbeddingRequest(BaseModel):
+    model: str
+    input: Union[str, List[str]]
+    encoding_format: Optional[str] = "float"  # "float" or "base64"
+    dimensions: Optional[int] = None
     user: Optional[str] = None
     seed: Optional[int] = None
 
@@ -176,6 +198,55 @@ def get_cli_response(prompt_info: str) -> str:
     
     return '\n'.join(lines)
 
+def get_cli_embedding_response(prompt_info: str, dimensions: int) -> Dict[str, Any]:
+    """Get embedding response choice from user via terminal"""
+    print("\n" + "="*80)
+    print("INTERCEPTED EMBEDDING REQUEST - Please choose response type")
+    print("="*80)
+    print(prompt_info)
+    print("\n" + "-"*80)
+    print("Choose embedding response type:")
+    print("1. Random normalized (default)")
+    print("2. Zero vector")
+    print("3. Sequential pattern")
+    print("4. Hash-based (deterministic)")
+    print("5. From file")
+    print("6. Custom JSON")
+    print("\nEnter choice [1-6] or press ENTER for default:")
+    
+    choice = input().strip()
+    if not choice:
+        choice = "1"
+    
+    if choice == "1":
+        return {"type": "random"}
+    elif choice == "2":
+        return {"type": "zero"}
+    elif choice == "3":
+        return {"type": "sequential"}
+    elif choice == "4":
+        return {"type": "hash"}
+    elif choice == "5":
+        print("Enter filepath (relative to current directory):")
+        filepath = input().strip()
+        return {"type": "file", "filepath": filepath}
+    elif choice == "6":
+        print("Enter custom embedding JSON (or 'END' on new line when done):")
+        lines = []
+        while True:
+            line = input()
+            if line.strip() == 'END':
+                break
+            lines.append(line)
+        try:
+            custom_data = json.loads('\n'.join(lines))
+            return {"type": "custom", "data": custom_data}
+        except json.JSONDecodeError:
+            print("Invalid JSON, using random instead")
+            return {"type": "random"}
+    else:
+        return {"type": "random"}
+
 async def get_web_response(request_id: str, request_data: Dict[str, Any]) -> Dict[str, Any]:
     """Get response from web UI"""
     # Store request in pending
@@ -217,6 +288,58 @@ async def get_web_response(request_id: str, request_data: Dict[str, Any]) -> Dic
 def count_tokens(text: str) -> int:
     """Simple token counter (approximation)"""
     return int(len(text.split()) * 1.3)  # Rough approximation
+
+def generate_random_embedding(dimensions: int) -> List[float]:
+    """Generate a random normalized embedding vector"""
+    embedding = np.random.randn(dimensions)
+    embedding = embedding / np.linalg.norm(embedding)
+    return embedding.tolist()
+
+def generate_zero_embedding(dimensions: int) -> List[float]:
+    """Generate a zero embedding vector"""
+    return [0.0] * dimensions
+
+def generate_sequential_embedding(dimensions: int) -> List[float]:
+    """Generate a sequential pattern embedding"""
+    embedding = np.arange(dimensions) / 1000.0
+    embedding = embedding / np.linalg.norm(embedding)
+    return embedding.tolist()
+
+def generate_hash_based_embedding(text: str, dimensions: int) -> List[float]:
+    """Generate deterministic embedding based on text hash"""
+    # Create a hash of the text
+    text_hash = hashlib.sha256(text.encode()).hexdigest()
+    # Use the hash to seed the random generator for deterministic results
+    seed = int(text_hash[:8], 16)
+    np.random.seed(seed)
+    embedding = np.random.randn(dimensions)
+    embedding = embedding / np.linalg.norm(embedding)
+    return embedding.tolist()
+
+def generate_similar_embedding(base_embedding: List[float], similarity: float = 0.95) -> List[float]:
+    """Generate an embedding similar to a base embedding"""
+    base = np.array(base_embedding)
+    noise = np.random.randn(len(base))
+    noise = noise / np.linalg.norm(noise)
+    result = similarity * base + (1 - similarity) * noise
+    result = result / np.linalg.norm(result)
+    return result.tolist()
+
+def load_embeddings_from_file(filepath: str) -> Optional[Dict[str, List[float]]]:
+    """Load embeddings from a JSON file"""
+    try:
+        with open(filepath, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"Failed to load embeddings from {filepath}: {e}")
+        return None
+
+def embeddings_to_base64(embeddings: List[float]) -> str:
+    """Convert embeddings to base64 encoded string"""
+    # Pack floats as little-endian binary data
+    binary_data = struct.pack(f'<{len(embeddings)}f', *embeddings)
+    # Encode to base64
+    return base64.b64encode(binary_data).decode('utf-8')
 
 async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Optional[bool]) -> Any:
     """Handle request with appropriate response mode"""
@@ -492,6 +615,108 @@ async def completions(request: CompletionRequest, raw_request: Request):
         }
         return response
 
+@app.post("/v1/embeddings")
+async def create_embeddings(request: EmbeddingRequest):
+    """Handle OpenAI embeddings API requests"""
+    log_request("/v1/embeddings", request.model_dump())
+    
+    # Determine dimensions
+    dimensions = request.dimensions
+    if not dimensions:
+        dimensions = EMBEDDING_DIMENSIONS.get(request.model, 1536)
+    
+    # Ensure input is a list
+    inputs = request.input if isinstance(request.input, list) else [request.input]
+    
+    # Get embedding response based on mode
+    if response_mode == "cli":
+        prompt_info = f"Endpoint: /v1/embeddings\n"
+        prompt_info += f"Model: {request.model}\n"
+        prompt_info += f"Dimensions: {dimensions}\n"
+        prompt_info += f"Input count: {len(inputs)}\n"
+        prompt_info += f"First input: {inputs[0][:100]}..." if inputs[0] and len(inputs[0]) > 100 else f"First input: {inputs[0]}\n"
+        
+        response_choice = get_cli_embedding_response(prompt_info, dimensions)
+    else:
+        # Web mode
+        request_id = str(uuid.uuid4())
+        response_data = await get_web_response(request_id, {
+            "endpoint": "/v1/embeddings",
+            "data": {
+                "model": request.model,
+                "dimensions": dimensions,
+                "inputs": inputs,
+                "encoding_format": request.encoding_format
+            }
+        })
+        
+        if response_data["type"] == "error":
+            return Response(
+                content=json.dumps({
+                    "error": {
+                        "message": response_data["response"],
+                        "type": "mock_error",
+                        "code": "mock_error"
+                    }
+                }),
+                status_code=400,
+                media_type="application/json"
+            )
+        
+        response_choice = response_data.get("embedding_type", {"type": "random"})
+    
+    # Generate embeddings based on choice
+    embeddings = []
+    total_tokens = 0
+    
+    for input_text in inputs:
+        total_tokens += count_tokens(input_text)
+        
+        if response_choice["type"] == "random":
+            embedding = generate_random_embedding(dimensions)
+        elif response_choice["type"] == "zero":
+            embedding = generate_zero_embedding(dimensions)
+        elif response_choice["type"] == "sequential":
+            embedding = generate_sequential_embedding(dimensions)
+        elif response_choice["type"] == "hash":
+            embedding = generate_hash_based_embedding(input_text, dimensions)
+        elif response_choice["type"] == "file":
+            loaded_embeddings = load_embeddings_from_file(response_choice["filepath"])
+            if loaded_embeddings and input_text in loaded_embeddings:
+                embedding = loaded_embeddings[input_text]
+            else:
+                # Fallback to hash-based if not found in file
+                embedding = generate_hash_based_embedding(input_text, dimensions)
+        elif response_choice["type"] == "custom":
+            embedding = response_choice["data"]
+        else:
+            embedding = generate_random_embedding(dimensions)
+        
+        # Format embedding based on encoding_format
+        if request.encoding_format == "base64":
+            embedding_data = embeddings_to_base64(embedding)
+        else:
+            embedding_data = embedding
+            
+        embeddings.append({
+            "object": "embedding",
+            "embedding": embedding_data,
+            "index": len(embeddings)
+        })
+    
+    # Return response
+    response = {
+        "object": "list",
+        "data": embeddings,
+        "model": request.model,
+        "usage": {
+            "prompt_tokens": total_tokens,
+            "total_tokens": total_tokens
+        }
+    }
+    
+    return response
+
 @app.get("/v1/models")
 async def list_models():
     """List available models (mimicking OpenAI's response)"""
@@ -515,6 +740,24 @@ async def list_models():
                 "object": "model",
                 "created": 1669599635,
                 "owned_by": "openai-internal"
+            },
+            {
+                "id": "text-embedding-ada-002",
+                "object": "model",
+                "created": 1671217299,
+                "owned_by": "openai-internal"
+            },
+            {
+                "id": "text-embedding-3-small",
+                "object": "model",
+                "created": 1705948997,
+                "owned_by": "system"
+            },
+            {
+                "id": "text-embedding-3-large",
+                "object": "model",
+                "created": 1705953180,
+                "owned_by": "system"
             }
         ]
     }
@@ -669,6 +912,7 @@ async def root():
             "endpoints": [
                 "/v1/chat/completions (OpenAI)",
                 "/v1/completions (OpenAI)",
+                "/v1/embeddings (OpenAI)",
                 "/v1/models (OpenAI)",
                 "/v1/messages (Anthropic)"
             ],
@@ -687,11 +931,16 @@ async def websocket_endpoint(websocket: WebSocket):
             
             if data["type"] == "response" and data["request_id"] in pending_requests:
                 # Store the response
-                pending_requests[data["request_id"]]["response"] = {
+                response_data = {
                     "type": "success",
                     "response": data["response"],
                     "stream": data.get("stream", False)
                 }
+                # Add embedding_type if present
+                if "embedding_type" in data:
+                    response_data["embedding_type"] = data["embedding_type"]
+                
+                pending_requests[data["request_id"]]["response"] = response_data
                 # Signal that response is ready
                 pending_requests[data["request_id"]]["event"].set()
             

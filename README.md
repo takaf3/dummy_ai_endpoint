@@ -7,8 +7,15 @@ Perfect for debugging applications where you don't have access to the source cod
 ## 🚀 Features
 
 - **Dual API compatibility**: Supports both OpenAI and Anthropic APIs
-  - OpenAI: `/v1/chat/completions` and `/v1/completions` endpoints
+  - OpenAI: `/v1/chat/completions`, `/v1/completions`, and `/v1/embeddings` endpoints
   - Anthropic: `/v1/messages` endpoint
+- **Embeddings Support**: Full OpenAI embeddings API compatibility with multiple response modes
+  - Random normalized vectors for general testing
+  - Zero vectors for edge case testing
+  - Sequential patterns for debugging
+  - Hash-based deterministic embeddings
+  - File-based responses from JSON
+  - Custom JSON input for specific test cases
 - **Multimodal Support**: Full support for images in both OpenAI and Anthropic formats
   - Base64 encoded images
   - Image URLs (OpenAI format)
@@ -130,6 +137,21 @@ Or press ENTER to use default message: 'Hello! I'm the AI assistant. How can I h
 3. Click "Send Response", "Send Default", or "Send Error"
 4. View request history and details
 5. Toggle between light and dark mode with the 🌙/☀️ button
+
+### 🧪 Testing with Example Clients
+
+The repository includes example clients to test all supported endpoints:
+
+```bash
+# Test OpenAI Chat Completions API
+python example_openai_client.py
+
+# Test Anthropic Messages API  
+python example_anthropic_client.py
+
+# Test OpenAI Embeddings API
+python example_embeddings_client.py
+```
 
 ## 📝 Example Usage
 
@@ -332,6 +354,43 @@ response = client.messages.create(
         }
     ]
 )
+```
+
+**OpenAI Embeddings Example:**
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="test-key",
+    base_url="http://localhost:8000/v1"
+)
+
+# Single text embedding
+response = client.embeddings.create(
+    model="text-embedding-ada-002",
+    input="The quick brown fox jumps over the lazy dog"
+)
+embedding = response.data[0].embedding
+print(f"Embedding dimensions: {len(embedding)}")
+
+# Batch embeddings
+texts = [
+    "Machine learning is fascinating",
+    "Artificial intelligence is the future",
+    "I love pizza and pasta"
+]
+response = client.embeddings.create(
+    model="text-embedding-3-large",
+    input=texts
+)
+
+# When using the mock server, you can choose different response types:
+# - Random: Normalized random vectors
+# - Zero: All zeros (for edge case testing)
+# - Sequential: Incrementing pattern
+# - Hash-based: Deterministic based on input text
+# - From file: Load from JSON (e.g., sample_embeddings.json)
+# - Custom: Manual vector input in Web UI
 ```
 
 ## 📊 Logging

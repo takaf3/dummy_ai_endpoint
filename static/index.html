@@ -47,6 +47,25 @@
                             <input type="checkbox" id="stream-response"> Stream response
                         </label>
                     </div>
+                    <div id="embedding-options" class="embedding-options hidden">
+                        <h3>Embedding Response Type</h3>
+                        <select id="embedding-type">
+                            <option value="random">🎲 Random normalized - Generate random unit vectors</option>
+                            <option value="zero">0️⃣ Zero vector - All zeros (edge case testing)</option>
+                            <option value="sequential">📈 Sequential pattern - Incrementing values</option>
+                            <option value="hash">🔐 Hash-based - Deterministic from input text</option>
+                            <option value="file">📁 From file - Load from JSON file</option>
+                            <option value="custom">✏️ Custom JSON - Manual vector input</option>
+                        </select>
+                        <div id="embedding-file-input" class="hidden">
+                            <label for="embedding-filepath">File path (relative to server directory):</label>
+                            <input type="text" id="embedding-filepath" placeholder="e.g., sample_embeddings.json">
+                        </div>
+                        <div id="embedding-custom-input" class="hidden">
+                            <label for="embedding-custom-json">Custom embedding vector (JSON array):</label>
+                            <textarea id="embedding-custom-json" placeholder='[0.1, 0.2, 0.3, 0.4, 0.5]' rows="5"></textarea>
+                        </div>
+                    </div>
                     <div class="button-group">
                         <button id="send-response" class="btn btn-primary">Send Response</button>
                         <button id="send-default" class="btn btn-primary">Send Default</button>

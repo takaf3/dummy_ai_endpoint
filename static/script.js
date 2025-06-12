@@ -190,8 +190,38 @@ function displayRequest(request) {
         }
     }
     
+    // Handle embeddings endpoint
+    if (request.endpoint && request.endpoint.includes('/v1/embeddings')) {
+        html += `<div class="detail-item"><span class="label">Dimensions:</span> <span class="value">${request.data.dimensions || 'Default'}</span></div>`;
+        html += `<div class="detail-item"><span class="label">Encoding Format:</span> <span class="value">${request.data.encoding_format || 'float'}</span></div>`;
+        
+        if (request.data.inputs) {
+            html += '<div class="messages"><div class="label">Inputs:</div>';
+            if (Array.isArray(request.data.inputs)) {
+                request.data.inputs.forEach((input, index) => {
+                    const truncated = input.length > 100 ? input.substring(0, 100) + '...' : input;
+                    html += `<div class="message"><div class="message-role">Input ${index + 1}:</div><div>${escapeHtml(truncated)}</div></div>`;
+                });
+            } else {
+                html += `<div class="message"><div>${escapeHtml(request.data.inputs)}</div></div>`;
+            }
+            html += '</div>';
+        } else if (request.data.input) {
+            html += '<div class="messages"><div class="label">Input:</div>';
+            if (Array.isArray(request.data.input)) {
+                request.data.input.forEach((input, index) => {
+                    const truncated = input.length > 100 ? input.substring(0, 100) + '...' : input;
+                    html += `<div class="message"><div class="message-role">Input ${index + 1}:</div><div>${escapeHtml(truncated)}</div></div>`;
+                });
+            } else {
+                const truncated = request.data.input.length > 100 ? request.data.input.substring(0, 100) + '...' : request.data.input;
+                html += `<div class="message"><div>${escapeHtml(truncated)}</div></div>`;
+            }
+            html += '</div>';
+        }
+    }
     // Display messages or prompt
-    if (request.data.messages) {
+    else if (request.data.messages) {
         html += '<div class="messages"><div class="label">Messages:</div>';
         request.data.messages.forEach(msg => {
             html += `<div class="message">`;
@@ -330,27 +360,82 @@ function displayRequest(request) {
     // Clear previous response
     document.getElementById('response-input').value = '';
     document.getElementById('stream-response').checked = request.data.stream || false;
+    
+    // Show/hide embedding options based on endpoint
+    const embeddingOptions = document.getElementById('embedding-options');
+    const responseInput = document.getElementById('response-input');
+    
+    if (request.endpoint && request.endpoint.includes('/v1/embeddings')) {
+        console.log('Showing embedding options for endpoint:', request.endpoint);
+        embeddingOptions.classList.remove('hidden');
+        responseInput.style.display = 'none';
+        document.getElementById('stream-response').parentElement.style.display = 'none';
+    } else {
+        console.log('Hiding embedding options for endpoint:', request.endpoint);
+        embeddingOptions.classList.add('hidden');
+        responseInput.style.display = 'block';
+        document.getElementById('stream-response').parentElement.style.display = 'block';
+    }
 }
 
 function sendResponse() {
     if (!currentRequestId) return;
     
-    const responseText = document.getElementById('response-input').value;
-    const shouldStream = document.getElementById('stream-response').checked;
-    
-    if (!responseText.trim()) {
-        alert('Please enter a response');
-        return;
+    // Check if it's an embeddings request
+    const embeddingOptions = document.getElementById('embedding-options');
+    if (!embeddingOptions.classList.contains('hidden')) {
+        // Handle embeddings response
+        const embeddingType = document.getElementById('embedding-type').value;
+        let embeddingData = { type: embeddingType };
+        
+        if (embeddingType === 'file') {
+            const filepath = document.getElementById('embedding-filepath').value.trim();
+            if (!filepath) {
+                alert('Please enter a filepath');
+                return;
+            }
+            embeddingData.filepath = filepath;
+        } else if (embeddingType === 'custom') {
+            const customJson = document.getElementById('embedding-custom-json').value.trim();
+            if (!customJson) {
+                alert('Please enter custom JSON');
+                return;
+            }
+            try {
+                embeddingData.data = JSON.parse(customJson);
+            } catch (e) {
+                alert('Invalid JSON: ' + e.message);
+                return;
+            }
+        }
+        
+        const message = {
+            type: 'response',
+            request_id: currentRequestId,
+            response: '',  // Empty for embeddings
+            embedding_type: embeddingData
+        };
+        
+        ws.send(JSON.stringify(message));
+    } else {
+        // Handle regular response
+        const responseText = document.getElementById('response-input').value;
+        const shouldStream = document.getElementById('stream-response').checked;
+        
+        if (!responseText.trim()) {
+            alert('Please enter a response');
+            return;
+        }
+        
+        const message = {
+            type: 'response',
+            request_id: currentRequestId,
+            response: responseText,
+            stream: shouldStream
+        };
+        
+        ws.send(JSON.stringify(message));
     }
-    
-    const message = {
-        type: 'response',
-        request_id: currentRequestId,
-        response: responseText,
-        stream: shouldStream
-    };
-    
-    ws.send(JSON.stringify(message));
     
     // Reset UI
     resetResponseUI();
@@ -594,17 +679,32 @@ function toggleHistoryItem(index) {
 function sendDefaultResponse() {
     if (!currentRequestId) return;
     
-    const defaultMessage = "Hello! I'm the AI assistant. How can I help you today?";
-    const shouldStream = document.getElementById('stream-response').checked;
-    
-    const message = {
-        type: 'response',
-        request_id: currentRequestId,
-        response: defaultMessage,
-        stream: shouldStream
-    };
-    
-    ws.send(JSON.stringify(message));
+    // Check if it's an embeddings request
+    const embeddingOptions = document.getElementById('embedding-options');
+    if (!embeddingOptions.classList.contains('hidden')) {
+        // Send default random embedding
+        const message = {
+            type: 'response',
+            request_id: currentRequestId,
+            response: '',
+            embedding_type: { type: 'random' }
+        };
+        
+        ws.send(JSON.stringify(message));
+    } else {
+        // Send default text response
+        const defaultMessage = "Hello! I'm the AI assistant. How can I help you today?";
+        const shouldStream = document.getElementById('stream-response').checked;
+        
+        const message = {
+            type: 'response',
+            request_id: currentRequestId,
+            response: defaultMessage,
+            stream: shouldStream
+        };
+        
+        ws.send(JSON.stringify(message));
+    }
     
     // Reset UI
     resetResponseUI();
@@ -742,6 +842,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('response-input').addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.key === 'Enter') {
             sendResponse();
+        }
+    });
+    
+    // Embedding type change handler
+    document.getElementById('embedding-type').addEventListener('change', (e) => {
+        const fileInput = document.getElementById('embedding-file-input');
+        const customInput = document.getElementById('embedding-custom-input');
+        
+        // Hide all optional inputs first
+        fileInput.classList.add('hidden');
+        customInput.classList.add('hidden');
+        
+        // Show relevant input based on selection
+        if (e.target.value === 'file') {
+            fileInput.classList.remove('hidden');
+        } else if (e.target.value === 'custom') {
+            customInput.classList.remove('hidden');
         }
     });
 });
