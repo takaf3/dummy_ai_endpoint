@@ -36,6 +36,32 @@ Perfect for debugging applications where you don't have access to the source cod
   - Compatible with both OpenAI and Anthropic authentication styles
   - API key displayed in console and web UI
 
+## 📁 Project Structure
+
+```
+dummy_ai_endpoint/
+├── dummy_ai_endpoint.py    # Main server application
+├── requirements.txt        # Python dependencies
+├── Dockerfile             # Docker configuration
+├── README.md             # This file
+├── LICENSE               # MIT license
+├── .gitignore           # Git ignore rules
+├── static/              # Web UI assets
+│   ├── index.html
+│   ├── script.js
+│   └── style.css
+├── examples/            # Example client implementations
+│   ├── example_openai_client.py
+│   ├── example_anthropic_client.py
+│   ├── example_anthropic_sdk.py
+│   ├── example_embeddings_client.py
+│   └── sample_embeddings.json
+├── docs/               # Additional documentation
+│   └── CLAUDE.md      # Claude AI assistant instructions
+└── tests/             # Test files
+    └── test_export.py
+```
+
 ## 📋 Requirements
 
 - Python 3.8+
@@ -194,18 +220,18 @@ The repository includes example clients to test all supported endpoints:
 
 ```bash
 # Test OpenAI Chat Completions API
-python example_openai_client.py
+python examples/example_openai_client.py
 
 # Test Anthropic Messages API  
-python example_anthropic_client.py
+python examples/example_anthropic_client.py
 
 # Test OpenAI Embeddings API
-python example_embeddings_client.py
+python examples/example_embeddings_client.py
 
 # When using remote mode, provide the API key:
-python example_openai_client.py YOUR_API_KEY_HERE
+python examples/example_openai_client.py YOUR_API_KEY_HERE
 # Or use environment variable:
-DUMMY_AI_API_KEY=YOUR_API_KEY_HERE python example_openai_client.py
+DUMMY_AI_API_KEY=YOUR_API_KEY_HERE python examples/example_openai_client.py
 ```
 
 ## 📝 Example Usage

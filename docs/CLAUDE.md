@@ -65,10 +65,12 @@ This is a FastAPI-based mock server that mimics both OpenAI and Anthropic APIs, 
 
 - **`dummy_ai_endpoint.py`**: Main server file containing all API endpoints and response handling logic
 - **`static/`**: Web UI assets (HTML, CSS, JS) for the web mode interface with dark mode support
-- **`example_openai_client.py`**: Demonstration client showing how to interact with the OpenAI API mock
-- **`example_anthropic_client.py`**: Demonstration client showing how to interact with the Anthropic API mock
-- **`example_embeddings_client.py`**: Demonstration client showing how to use the embeddings API
-- **`sample_embeddings.json`**: Example file for testing file-based embeddings responses
+- **`examples/`**: Directory containing all example client implementations
+  - `example_openai_client.py`: Demonstration client for OpenAI API
+  - `example_anthropic_client.py`: Demonstration client for Anthropic API  
+  - `example_anthropic_sdk.py`: Example using official Anthropic SDK
+  - `example_embeddings_client.py`: Demonstration of embeddings API
+  - `sample_embeddings.json`: Example file for testing file-based embeddings
 
 ### Key Features
 
