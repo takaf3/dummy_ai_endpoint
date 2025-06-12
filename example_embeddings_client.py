@@ -6,12 +6,17 @@ This demonstrates how to use the /v1/embeddings endpoint.
 
 from openai import OpenAI
 import numpy as np
+import os
+import sys
 from typing import List
+
+# Get API key from environment or command line
+api_key = os.environ.get('DUMMY_AI_API_KEY') or (sys.argv[1] if len(sys.argv) > 1 else "dummy-key")
 
 # Configure the OpenAI client to use our local endpoint
 client = OpenAI(
     base_url="http://localhost:8000/v1",
-    api_key="dummy-key"  # The dummy server doesn't validate API keys
+    api_key=api_key  # Use real API key in remote mode
 )
 
 def get_embedding(text: str, model: str = "text-embedding-ada-002") -> List[float]:
@@ -37,7 +42,11 @@ def cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
 def main():
-    print("=== OpenAI Embeddings API Example ===\n")
+    print("=== OpenAI Embeddings API Example ===")
+    print("\nUsage:")
+    print("  python example_embeddings_client.py [API_KEY]")
+    print("  DUMMY_AI_API_KEY=your-api-key python example_embeddings_client.py")
+    print("\nNote: API key is required when server is running with --remote flag\n")
     
     # Example 1: Single text embedding
     print("1. Getting embedding for a single text:")

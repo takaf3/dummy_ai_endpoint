@@ -2,6 +2,34 @@ let ws = null;
 let currentRequestId = null;
 let requestHistory = [];
 
+// Fetch and display API key information
+async function fetchApiKeyInfo() {
+    try {
+        const response = await fetch('/api_key_info');
+        const data = await response.json();
+        
+        if (data.remote_mode && data.api_key) {
+            document.getElementById('api-key-section').classList.remove('hidden');
+            document.getElementById('api-key-value').textContent = data.api_key;
+            
+            // Setup copy button
+            document.getElementById('copy-api-key').addEventListener('click', () => {
+                navigator.clipboard.writeText(data.api_key).then(() => {
+                    const button = document.getElementById('copy-api-key');
+                    button.textContent = '✅ Copied!';
+                    setTimeout(() => {
+                        button.textContent = '📋 Copy';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Failed to fetch API key info:', error);
+    }
+}
+
 function connectWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
@@ -825,6 +853,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Theme toggle event listener
     document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+    
+    // Fetch API key info
+    fetchApiKeyInfo();
     
     // WebSocket connection
     connectWebSocket();

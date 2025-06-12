@@ -15,11 +15,13 @@ import hashlib
 import os
 import base64
 import struct
+import secrets
 
 import uvicorn
-from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect, HTTPException, Depends
 from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 import numpy as np
 
@@ -40,6 +42,31 @@ app = FastAPI(title="Dummy AI Endpoint - OpenAI & Anthropic Compatible")
 pending_requests = {}
 websocket_clients = []
 response_mode = "cli"  # "cli" or "web"
+remote_mode = False
+api_key = None
+
+# API Key Security
+security = HTTPBearer(auto_error=False)
+
+async def verify_api_key(request: Request, credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Verify the API key for remote mode"""
+    if remote_mode:
+        # Check Bearer token first (OpenAI style)
+        if credentials and credentials.credentials == api_key:
+            return credentials
+        
+        # Check x-api-key header (Anthropic style)
+        x_api_key = request.headers.get("x-api-key")
+        if x_api_key == api_key:
+            return credentials
+        
+        # If neither is valid, raise error
+        raise HTTPException(
+            status_code=401, 
+            detail="Invalid or missing API key",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    return credentials
 
 # Embedding model dimensions
 EMBEDDING_DIMENSIONS = {
@@ -421,7 +448,7 @@ async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Op
     return user_response
 
 @app.post("/v1/chat/completions")
-async def chat_completions(request: ChatCompletionRequest, raw_request: Request):
+async def chat_completions(request: ChatCompletionRequest, raw_request: Request, _: Any = Depends(verify_api_key)):
     """Handle chat completion requests"""
     request_dict = request.dict()
     log_request("/v1/chat/completions", request_dict)
@@ -532,7 +559,7 @@ async def chat_completions(request: ChatCompletionRequest, raw_request: Request)
         return response
 
 @app.post("/v1/completions")
-async def completions(request: CompletionRequest, raw_request: Request):
+async def completions(request: CompletionRequest, raw_request: Request, _: Any = Depends(verify_api_key)):
     """Handle completion requests"""
     request_dict = request.dict()
     log_request("/v1/completions", request_dict)
@@ -616,7 +643,7 @@ async def completions(request: CompletionRequest, raw_request: Request):
         return response
 
 @app.post("/v1/embeddings")
-async def create_embeddings(request: EmbeddingRequest):
+async def create_embeddings(request: EmbeddingRequest, _: Any = Depends(verify_api_key)):
     """Handle OpenAI embeddings API requests"""
     log_request("/v1/embeddings", request.model_dump())
     
@@ -718,7 +745,7 @@ async def create_embeddings(request: EmbeddingRequest):
     return response
 
 @app.get("/v1/models")
-async def list_models():
+async def list_models(_: Any = Depends(verify_api_key)):
     """List available models (mimicking OpenAI's response)"""
     return {
         "object": "list",
@@ -763,7 +790,7 @@ async def list_models():
     }
 
 @app.post("/v1/messages")
-async def anthropic_messages(request: AnthropicRequest, raw_request: Request):
+async def anthropic_messages(request: AnthropicRequest, raw_request: Request, _: Any = Depends(verify_api_key)):
     """Handle Anthropic messages API requests"""
     request_dict = request.dict()
     log_request("/v1/messages (Anthropic)", request_dict)
@@ -916,8 +943,41 @@ async def root():
                 "/v1/models (OpenAI)",
                 "/v1/messages (Anthropic)"
             ],
-            "mode": response_mode
+            "mode": response_mode,
+            "remote_mode": remote_mode
         }
+
+@app.get("/server_info")
+async def server_info():
+    """Server information endpoint - disabled in remote mode"""
+    if remote_mode:
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    return {
+        "message": "Dummy AI Endpoint Server Information",
+        "mode": response_mode,
+        "remote_mode": remote_mode,
+        "api_key_required": remote_mode,
+        "supported_endpoints": [
+            "/v1/chat/completions (OpenAI)",
+            "/v1/completions (OpenAI)",
+            "/v1/embeddings (OpenAI)",
+            "/v1/models (OpenAI)",
+            "/v1/messages (Anthropic)"
+        ]
+    }
+
+@app.get("/api_key_info")
+async def get_api_key_info():
+    """Get API key information - only accessible in web mode without authentication"""
+    if response_mode != "web":
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    return {
+        "remote_mode": remote_mode,
+        "api_key": api_key if remote_mode else None,
+        "api_key_required": remote_mode
+    }
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -967,17 +1027,35 @@ if __name__ == "__main__":
                         help="Port to run the server on")
     parser.add_argument("--host", default="0.0.0.0",
                         help="Host to bind the server to")
+    parser.add_argument("--remote", action="store_true",
+                        help="Run in remote mode with API key authentication")
     
     args = parser.parse_args()
     response_mode = args.mode
+    remote_mode = args.remote
+    
+    # Generate API key if in remote mode
+    if remote_mode:
+        api_key = secrets.token_urlsafe(32)
     
     print("\n" + "="*80)
     print("OpenAI & Anthropic API Mock Server")
     print("="*80)
     print(f"Mode: {response_mode.upper()}")
+    print(f"Remote Mode: {'ENABLED' if remote_mode else 'DISABLED'}")
     print(f"Server: http://localhost:{args.port}")
     if response_mode == "web":
         print(f"Web UI: http://localhost:{args.port}")
+    
+    if remote_mode:
+        print("\n" + "!"*80)
+        print("REMOTE MODE - API KEY REQUIRED")
+        print("!"*80)
+        print(f"API Key: {api_key}")
+        print("\nUse this API key in the Authorization header:")
+        print(f"Authorization: Bearer {api_key}")
+        print("!"*80)
+    
     print("\nThis server mimics OpenAI and Anthropic APIs for debugging purposes.")
     print("All requests will be logged to:")
     print("  - Console output")

@@ -31,6 +31,10 @@ Perfect for debugging applications where you don't have access to the source cod
 - **Web UI**: Beautiful web interface for managing responses with proper Anthropic tool display
 - **Dark Mode**: Automatic dark mode support with system preference detection and manual toggle
 - **Dual mode**: Choose between CLI prompts or web UI for response management
+- **Remote Mode**: Secure API key authentication for running on public networks
+  - Auto-generated secure API keys
+  - Compatible with both OpenAI and Anthropic authentication styles
+  - API key displayed in console and web UI
 
 ## 📋 Requirements
 
@@ -78,6 +82,43 @@ python dummy_ai_endpoint.py --mode web
 
 2. **Open your browser** to `http://localhost:8000` to access the web interface
 
+#### Remote Mode (Secure API)
+For running the server on remote/public networks with API key authentication:
+
+1. **Start the server with remote mode:**
+```bash
+python dummy_ai_endpoint.py --mode web --remote
+```
+
+2. **Copy the API key** displayed in the console:
+```
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+REMOTE MODE - API KEY REQUIRED
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+API Key: YOUR_GENERATED_API_KEY_HERE
+
+Use this API key in the Authorization header:
+Authorization: Bearer YOUR_GENERATED_API_KEY_HERE
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+
+3. **Use the API key in your requests:**
+   - The server accepts both authentication formats:
+     - OpenAI style: `Authorization: Bearer <api-key>`
+     - Anthropic style: `x-api-key: <api-key>`
+   - The API key is also displayed in the web UI
+
+**Docker with Remote Mode:**
+```bash
+# Build and run with remote mode enabled
+docker build -t dummy-ai-endpoint .
+docker run -p 8000:8000 dummy-ai-endpoint \
+  python dummy_ai_endpoint.py --mode web --host 0.0.0.0 --port 8000 --remote
+
+# View the API key from logs
+docker logs <container-name> | grep "API Key:"
+```
+
 ### Configure Your Application
 
 Configure your application to use `http://localhost:8000` as the API base URL:
@@ -88,14 +129,14 @@ Configure your application to use `http://localhost:8000` as the API base URL:
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="dummy-key",  # Any string works
+    api_key="dummy-key",  # Any string works (use real API key in remote mode)
     base_url="http://localhost:8000/v1"
 )
 
 # Or with older openai library
 import openai
 openai.api_base = "http://localhost:8000/v1"
-openai.api_key = "dummy-key"
+openai.api_key = "dummy-key"  # Use real API key in remote mode
 ```
 
 **For Anthropic:**
@@ -104,9 +145,18 @@ openai.api_key = "dummy-key"
 from anthropic import Anthropic
 
 client = Anthropic(
-    api_key="dummy-key",  # Any string works
-    base_url="http://localhost:8000"
+    api_key="dummy-key",  # Any string works (use real API key in remote mode)
+    base_url="http://localhost:8000/v1"  # Note: use /v1 for Anthropic SDK
 )
+
+# Or using raw requests (supports both auth styles in remote mode)
+import requests
+
+# OpenAI style auth
+headers = {"Authorization": "Bearer YOUR_API_KEY"}
+
+# Anthropic style auth  
+headers = {"x-api-key": "YOUR_API_KEY"}
 ```
 
 ### Response Management
@@ -151,6 +201,11 @@ python example_anthropic_client.py
 
 # Test OpenAI Embeddings API
 python example_embeddings_client.py
+
+# When using remote mode, provide the API key:
+python example_openai_client.py YOUR_API_KEY_HERE
+# Or use environment variable:
+DUMMY_AI_API_KEY=YOUR_API_KEY_HERE python example_openai_client.py
 ```
 
 ## 📝 Example Usage

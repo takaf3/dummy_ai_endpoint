@@ -6,16 +6,27 @@ Example client showing how to use the OpenAI API Mock Server
 from openai import OpenAI
 import time
 import base64
+import os
+import sys
+
+def get_client():
+    """Get OpenAI client with proper API key
+    
+    The OpenAI client automatically sends the API key as 'Authorization: Bearer <api-key>'
+    which is compatible with our remote mode authentication.
+    """
+    api_key = os.environ.get('DUMMY_AI_API_KEY') or (sys.argv[1] if len(sys.argv) > 1 else "test-key")
+    return OpenAI(
+        api_key=api_key,
+        base_url="http://localhost:8000/v1"
+    )
 
 def test_chat_completion():
     """Test chat completion endpoint"""
     print("\n=== Testing Chat Completion ===")
     
     # Configure client to use mock server
-    client = OpenAI(
-        api_key="test-key",  # Any string works
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
     
     # Make a chat completion request
     response = client.chat.completions.create(
@@ -35,10 +46,7 @@ def test_streaming_chat():
     """Test streaming chat completion"""
     print("\n=== Testing Streaming Chat ===")
     
-    client = OpenAI(
-        api_key="test-key",
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
     
     # Make a streaming request
     stream = client.chat.completions.create(
@@ -59,10 +67,7 @@ def test_text_completion():
     """Test legacy text completion endpoint"""
     print("\n=== Testing Text Completion ===")
     
-    client = OpenAI(
-        api_key="test-key",
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
     
     # Make a completion request
     response = client.completions.create(
@@ -79,10 +84,7 @@ def test_chat_completion_minimal_params():
     print("\n=== Testing Chat Completion (Minimal Params) ===")
 
     # Configure client to use mock server
-    client = OpenAI(
-        api_key="test-key",  # Any string works
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
 
     # Make a chat completion request with only required parameters
     response = client.chat.completions.create(
@@ -103,10 +105,7 @@ def test_text_completion_minimal_params():
     """Test legacy text completion endpoint with minimal parameters"""
     print("\n=== Testing Text Completion (Minimal Params) ===")
 
-    client = OpenAI(
-        api_key="test-key",
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
 
     # Make a completion request with only required parameters
     response = client.completions.create(
@@ -120,10 +119,7 @@ def test_tool_use_basic():
     """Test basic tool use functionality"""
     print("\n=== Testing Basic Tool Use ===")
     
-    client = OpenAI(
-        api_key="test-key",
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
     
     # Define a simple weather tool
     tools = [
@@ -171,10 +167,7 @@ def test_tool_use_forced():
     """Test forced tool choice"""
     print("\n=== Testing Forced Tool Choice ===")
     
-    client = OpenAI(
-        api_key="test-key",
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
     
     # Define a calculator tool
     tools = [
@@ -216,10 +209,7 @@ def test_tool_use_multiple():
     """Test multiple tools available"""
     print("\n=== Testing Multiple Tools ===")
     
-    client = OpenAI(
-        api_key="test-key",
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
     
     # Define multiple tools
     tools = [
@@ -278,10 +268,7 @@ def test_tool_use_conversation():
     """Test tool use in a conversation flow"""
     print("\n=== Testing Tool Use in Conversation ===")
     
-    client = OpenAI(
-        api_key="test-key",
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
     
     # Define a file operations tool
     tools = [
@@ -344,10 +331,7 @@ def test_models_endpoint():
     """Test models listing endpoint"""
     print("\n=== Testing Models Endpoint ===")
     
-    client = OpenAI(
-        api_key="test-key",
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
     
     # List available models
     models = client.models.list()
@@ -360,10 +344,7 @@ def test_multimodal_base64():
     """Test multimodal chat with base64 encoded image"""
     print("\n=== Testing Multimodal Chat (Base64 Image) ===")
     
-    client = OpenAI(
-        api_key="test-key",
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
     
     # Create a simple 1x1 red pixel PNG as base64
     # This is a minimal valid PNG image
@@ -397,10 +378,7 @@ def test_multimodal_url():
     """Test multimodal chat with image URL"""
     print("\n=== Testing Multimodal Chat (Image URL) ===")
     
-    client = OpenAI(
-        api_key="test-key",
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
     
     response = client.chat.completions.create(
         model="gpt-4-vision-preview",
@@ -430,10 +408,7 @@ def test_multimodal_multiple():
     """Test multimodal chat with multiple images and text"""
     print("\n=== Testing Multimodal Chat (Multiple Images) ===")
     
-    client = OpenAI(
-        api_key="test-key",
-        base_url="http://localhost:8000/v1"
-    )
+    client = get_client()
     
     # Create two different colored pixels
     red_pixel = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
@@ -476,6 +451,10 @@ def test_multimodal_multiple():
 if __name__ == "__main__":
     print("OpenAI API Mock Server - Example Client")
     print("Make sure the mock server is running on http://localhost:8000")
+    print("\nUsage:")
+    print("  python example_openai_client.py [API_KEY]")
+    print("  DUMMY_AI_API_KEY=your-api-key python example_openai_client.py")
+    print("\nNote: API key is required when server is running with --remote flag")
     print("="*50)
     
     try:

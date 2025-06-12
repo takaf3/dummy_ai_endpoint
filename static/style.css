@@ -857,3 +857,67 @@ header p {
     background: var(--bg-secondary);
     color: var(--text-primary);
 }
+/* API Key Section Styles */
+.api-key-section {
+    margin: 20px 0;
+    padding: 20px;
+    background: var(--warning-bg);
+    border: 2px solid var(--warning-border);
+    border-radius: 8px;
+}
+
+.api-key-section.hidden {
+    display: none;
+}
+
+.api-key-container h3 {
+    color: var(--text-heading);
+    margin-bottom: 10px;
+}
+
+.api-key-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.api-key-display code {
+    flex: 1;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 14px;
+    word-break: break-all;
+    user-select: all;
+}
+
+.copy-button {
+    padding: 8px 16px;
+    background: var(--btn-primary-bg);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.copy-button:hover {
+    background: var(--btn-primary-hover);
+}
+
+.api-key-hint {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.api-key-hint code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+}

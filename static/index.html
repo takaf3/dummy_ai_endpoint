@@ -30,6 +30,18 @@
             </div>
         </div>
 
+        <div id="api-key-section" class="api-key-section hidden">
+            <div class="api-key-container">
+                <h3>🔑 API Key Required</h3>
+                <p>This server is running in remote mode. Use this API key for authentication:</p>
+                <div class="api-key-display">
+                    <code id="api-key-value">Loading...</code>
+                    <button id="copy-api-key" class="copy-button">📋 Copy</button>
+                </div>
+                <p class="api-key-hint">Include in requests as: <code>Authorization: Bearer &lt;api-key&gt;</code></p>
+            </div>
+        </div>
+
         <div class="main-content">
             <div class="request-section">
                 <h2>📥 Incoming Request</h2>

@@ -7,11 +7,13 @@ This demonstrates how to make requests to the Anthropic Messages API.
 import json
 import requests
 import base64
+import os
+import sys
 from typing import Optional, List, Dict, Any, Union
 
 # Configuration
 BASE_URL = "http://localhost:8000"
-ANTHROPIC_API_KEY = "mock-api-key"  # Not validated by mock server
+ANTHROPIC_API_KEY = os.environ.get('DUMMY_AI_API_KEY') or (sys.argv[1] if len(sys.argv) > 1 else "mock-api-key")
 
 
 def create_message(
@@ -26,10 +28,12 @@ def create_message(
 ) -> Union[Dict[str, Any], None]:
     """Send a message to the Anthropic Messages API."""
     headers = {
-        "x-api-key": ANTHROPIC_API_KEY,
+        "x-api-key": ANTHROPIC_API_KEY,  # Standard Anthropic header - works with remote mode
         "anthropic-version": "2023-06-01",
         "content-type": "application/json",
     }
+    # Note: Our server accepts both 'x-api-key' (Anthropic style) and 
+    # 'Authorization: Bearer' (OpenAI style) in remote mode
     
     data = {
         "model": model,
@@ -101,6 +105,10 @@ def main():
     print("=" * 80)
     print(f"Using endpoint: {BASE_URL}/v1/messages")
     print("Make sure the mock server is running!")
+    print("\nUsage:")
+    print("  python example_anthropic_client.py [API_KEY]")
+    print("  DUMMY_AI_API_KEY=your-api-key python example_anthropic_client.py")
+    print("\nNote: API key is required when server is running with --remote flag")
     print("=" * 80)
     
     # Example 1: Simple message
