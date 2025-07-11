@@ -485,6 +485,23 @@ function sendError() {
     resetResponseUI();
 }
 
+function send429Error() {
+    if (!currentRequestId) return;
+    
+    const message = {
+        type: 'error',
+        request_id: currentRequestId,
+        error: 'Too Many Requests',
+        message: 'Rate limit exceeded. Please try again later.',
+        status_code: 429
+    };
+    
+    ws.send(JSON.stringify(message));
+    
+    // Reset UI
+    resetResponseUI();
+}
+
 function resetResponseUI() {
     currentRequestId = null;
     document.getElementById('request-info').innerHTML = '<p class="waiting-message">Waiting for requests...</p>';
@@ -864,6 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('send-response').addEventListener('click', sendResponse);
     document.getElementById('send-default').addEventListener('click', sendDefaultResponse);
     document.getElementById('send-error').addEventListener('click', sendError);
+    document.getElementById('send-429').addEventListener('click', send429Error);
     
     // Export button event listeners
     document.getElementById('export-json').addEventListener('click', exportToJSON);
