@@ -502,6 +502,45 @@ function send429Error() {
     resetResponseUI();
 }
 
+function sendCustomError() {
+    if (!currentRequestId) return;
+    
+    const statusCode = parseInt(document.getElementById('custom-status-code').value);
+    const errorMessage = document.getElementById('custom-error-message').value;
+    const errorDetail = document.getElementById('custom-error-detail').value;
+    
+    // Validate status code
+    if (isNaN(statusCode) || statusCode < 100 || statusCode > 599) {
+        alert('Please enter a valid HTTP status code between 100 and 599');
+        return;
+    }
+    
+    // Validate required fields
+    if (!errorMessage.trim()) {
+        alert('Please enter an error message');
+        return;
+    }
+    
+    const message = {
+        type: 'error',
+        request_id: currentRequestId,
+        error: errorMessage,
+        message: errorDetail,
+        status_code: statusCode
+    };
+    
+    ws.send(JSON.stringify(message));
+    
+    // Reset UI
+    resetResponseUI();
+}
+
+function setPresetError(statusCode, errorMessage, errorDetail) {
+    document.getElementById('custom-status-code').value = statusCode;
+    document.getElementById('custom-error-message').value = errorMessage;
+    document.getElementById('custom-error-detail').value = errorDetail;
+}
+
 function resetResponseUI() {
     currentRequestId = null;
     document.getElementById('request-info').innerHTML = '<p class="waiting-message">Waiting for requests...</p>';
@@ -882,6 +921,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('send-default').addEventListener('click', sendDefaultResponse);
     document.getElementById('send-error').addEventListener('click', sendError);
     document.getElementById('send-429').addEventListener('click', send429Error);
+    document.getElementById('send-custom-error').addEventListener('click', sendCustomError);
+    
+    // Preset error button event listeners
+    document.querySelectorAll('.btn-preset').forEach(button => {
+        button.addEventListener('click', () => {
+            const statusCode = button.getAttribute('data-status');
+            const errorMessage = button.getAttribute('data-message');
+            const errorDetail = button.getAttribute('data-detail');
+            setPresetError(statusCode, errorMessage, errorDetail);
+        });
+    });
     
     // Export button event listeners
     document.getElementById('export-json').addEventListener('click', exportToJSON);
