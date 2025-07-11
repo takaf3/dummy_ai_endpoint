@@ -84,6 +84,34 @@
                         <button id="send-error" class="btn btn-secondary">Send Error</button>
                         <button id="send-429" class="btn btn-secondary">Send 429 (Rate Limit)</button>
                     </div>
+                    <div class="custom-error-section">
+                        <h3>🚨 Custom Error Response</h3>
+                        <div class="custom-error-controls">
+                            <div class="input-group">
+                                <label for="custom-status-code">HTTP Status Code:</label>
+                                <input type="number" id="custom-status-code" placeholder="e.g., 503, 502, 500" min="100" max="599" value="500">
+                            </div>
+                            <div class="input-group">
+                                <label for="custom-error-message">Error Message:</label>
+                                <input type="text" id="custom-error-message" placeholder="e.g., Service Unavailable" value="Internal Server Error">
+                            </div>
+                            <div class="input-group">
+                                <label for="custom-error-detail">Error Detail:</label>
+                                <textarea id="custom-error-detail" placeholder="Detailed error description..." rows="3">The server encountered an error processing your request.</textarea>
+                            </div>
+                            <div class="preset-buttons">
+                                <label>Quick Presets:</label>
+                                <div class="preset-button-group">
+                                    <button class="btn btn-preset" data-status="503" data-message="Service Unavailable" data-detail="The service is temporarily unavailable. Please try again later.">503 Service Unavailable</button>
+                                    <button class="btn btn-preset" data-status="502" data-message="Bad Gateway" data-detail="The server received an invalid response from an upstream server.">502 Bad Gateway</button>
+                                    <button class="btn btn-preset" data-status="500" data-message="Internal Server Error" data-detail="The server encountered an error processing your request.">500 Internal Error</button>
+                                    <button class="btn btn-preset" data-status="404" data-message="Not Found" data-detail="The requested resource was not found.">404 Not Found</button>
+                                    <button class="btn btn-preset" data-status="403" data-message="Forbidden" data-detail="Access to the requested resource is forbidden.">403 Forbidden</button>
+                                </div>
+                            </div>
+                            <button id="send-custom-error" class="btn btn-secondary">Send Custom Error</button>
+                        </div>
+                    </div>
                 </div>
                 <div id="waiting-for-request" class="info-box">
                     <p class="waiting-message">No active request</p>
