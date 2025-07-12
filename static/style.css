@@ -1209,15 +1209,24 @@ header p {
 
 /* Preset buttons styling */
 .preset-buttons {
-    margin-top: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-primary);
 }
 
 .preset-buttons label {
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-primary);
     font-size: 14px;
-    margin-bottom: 8px;
-    display: block;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.preset-buttons label::before {
+    content: '⚡';
+    font-size: 16px;
 }
 
 .preset-button-group {
@@ -1227,47 +1236,78 @@ header p {
     margin-top: 8px;
 }
 
+/* Preset Error Buttons - Modern Card Design */
 .btn-preset {
-    padding: 8px 16px;
+    padding: 12px 20px;
     font-size: 13px;
-    font-weight: 500;
-    background: var(--bg-secondary);
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: var(--text-primary);
-    border: 2px solid var(--border-primary);
-    border-radius: 8px;
+    border: 1px solid rgba(231, 76, 60, 0.2);
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
-    z-index: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
+[data-theme="dark"] .btn-preset {
+    background: rgba(45, 45, 45, 0.8);
+    border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+/* Gradient overlay on hover */
 .btn-preset::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, var(--gradient-error-start) 0%, var(--gradient-error-end) 100%);
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, 
+        color-mix(in srgb, var(--gradient-error-start) 85%, black), 
+        color-mix(in srgb, var(--gradient-error-end) 85%, black));
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
     z-index: -1;
 }
 
+/* Status code badge */
+.btn-preset::after {
+    content: attr(data-status);
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    font-size: 18px;
+    font-weight: 700;
+    opacity: 0.1;
+    transition: all 0.3s ease;
+}
+
 .btn-preset:hover {
-    color: white;
-    border-color: var(--gradient-error-start);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+    color: #dc2626;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 24px rgba(231, 76, 60, 0.25);
+    border-color: transparent;
+    font-weight: 700;
 }
 
 .btn-preset:hover::before {
-    transform: translateX(0);
+    opacity: 0.1;
+}
+
+.btn-preset:hover::after {
+    opacity: 0.2;
+    transform: translateY(-50%) scale(1.1);
 }
 
 .btn-preset:active {
-    transform: translateY(0);
+    transform: translateY(-1px) scale(1);
 }
 
 /* Ensure text stays on top */
@@ -1277,17 +1317,55 @@ header p {
     z-index: 2;
 }
 
-[data-theme="dark"] .btn-preset {
-    background: var(--bg-primary);
-    border-color: var(--border-primary);
-    color: var(--text-primary);
+/* Different colors for different error types */
+.btn-preset[data-status="503"],
+.btn-preset[data-status="502"] {
+    border-color: rgba(251, 191, 36, 0.2);
 }
 
-[data-theme="dark"] .btn-preset:hover {
-    background: var(--btn-secondary-bg);
-    color: white;
-    border-color: var(--btn-secondary-bg);
+.btn-preset[data-status="503"]::before,
+.btn-preset[data-status="502"]::before {
+    background: linear-gradient(135deg, 
+        color-mix(in srgb, #f59e0b 80%, black), 
+        color-mix(in srgb, #d97706 80%, black));
 }
+
+.btn-preset[data-status="503"]:hover,
+.btn-preset[data-status="502"]:hover {
+    color: #d97706;
+    box-shadow: 0 12px 24px rgba(245, 158, 11, 0.25);
+}
+
+.btn-preset[data-status="404"] {
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.btn-preset[data-status="404"]::before {
+    background: linear-gradient(135deg, 
+        color-mix(in srgb, #3b82f6 80%, black), 
+        color-mix(in srgb, #2563eb 80%, black));
+}
+
+.btn-preset[data-status="404"]:hover {
+    color: #2563eb;
+    box-shadow: 0 12px 24px rgba(59, 130, 246, 0.25);
+}
+
+.btn-preset[data-status="403"] {
+    border-color: rgba(168, 85, 247, 0.2);
+}
+
+.btn-preset[data-status="403"]::before {
+    background: linear-gradient(135deg, 
+        color-mix(in srgb, #a855f7 75%, black), 
+        color-mix(in srgb, #9333ea 75%, black));
+}
+
+.btn-preset[data-status="403"]:hover {
+    color: #9333ea;
+    box-shadow: 0 12px 24px rgba(168, 85, 247, 0.25);
+}
+
 
 /* Custom error button styling */
 #send-custom-error {
