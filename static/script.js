@@ -2,6 +2,17 @@ let ws = null;
 let currentRequestId = null;
 let requestHistory = [];
 
+// Button loading state helper
+function setButtonLoading(button, isLoading) {
+    if (isLoading) {
+        button.classList.add('loading');
+        button.disabled = true;
+    } else {
+        button.classList.remove('loading');
+        button.disabled = false;
+    }
+}
+
 // Fetch and display API key information
 async function fetchApiKeyInfo() {
     try {
@@ -409,9 +420,13 @@ function displayRequest(request) {
 function sendResponse() {
     if (!currentRequestId) return;
     
-    // Check if it's an embeddings request
-    const embeddingOptions = document.getElementById('embedding-options');
-    if (!embeddingOptions.classList.contains('hidden')) {
+    const button = document.getElementById('send-response');
+    setButtonLoading(button, true);
+    
+    try {
+        // Check if it's an embeddings request
+        const embeddingOptions = document.getElementById('embedding-options');
+        if (!embeddingOptions.classList.contains('hidden')) {
         // Handle embeddings response
         const embeddingType = document.getElementById('embedding-type').value;
         let embeddingData = { type: embeddingType };
@@ -420,6 +435,7 @@ function sendResponse() {
             const filepath = document.getElementById('embedding-filepath').value.trim();
             if (!filepath) {
                 alert('Please enter a filepath');
+                setButtonLoading(button, false);
                 return;
             }
             embeddingData.filepath = filepath;
@@ -427,12 +443,14 @@ function sendResponse() {
             const customJson = document.getElementById('embedding-custom-json').value.trim();
             if (!customJson) {
                 alert('Please enter custom JSON');
+                setButtonLoading(button, false);
                 return;
             }
             try {
                 embeddingData.data = JSON.parse(customJson);
             } catch (e) {
                 alert('Invalid JSON: ' + e.message);
+                setButtonLoading(button, false);
                 return;
             }
         }
@@ -445,15 +463,16 @@ function sendResponse() {
         };
         
         ws.send(JSON.stringify(message));
-    } else {
-        // Handle regular response
-        const responseText = document.getElementById('response-input').value;
-        const shouldStream = document.getElementById('stream-response').checked;
-        
-        if (!responseText.trim()) {
-            alert('Please enter a response');
-            return;
-        }
+        } else {
+            // Handle regular response
+            const responseText = document.getElementById('response-input').value;
+            const shouldStream = document.getElementById('stream-response').checked;
+            
+            if (!responseText.trim()) {
+                alert('Please enter a response');
+                setButtonLoading(button, false);
+                return;
+            }
         
         const message = {
             type: 'response',
@@ -463,26 +482,120 @@ function sendResponse() {
         };
         
         ws.send(JSON.stringify(message));
+        }
+        
+        // Reset UI
+        resetResponseUI();
+        setButtonLoading(button, false);
+    } catch (error) {
+        console.error('Error sending response:', error);
+        alert('Failed to send response');
+        setButtonLoading(button, false);
     }
-    
-    // Reset UI
-    resetResponseUI();
 }
 
 function sendError() {
     if (!currentRequestId) return;
     
-    const message = {
-        type: 'error',
-        request_id: currentRequestId,
-        error: 'Internal Server Error',
-        message: 'The server encountered an error processing your request.'
-    };
+    const button = document.getElementById('send-error');
+    setButtonLoading(button, true);
     
-    ws.send(JSON.stringify(message));
+    try {
+        const message = {
+            type: 'error',
+            request_id: currentRequestId,
+            error: 'Internal Server Error',
+            message: 'The server encountered an error processing your request.'
+        };
+        
+        ws.send(JSON.stringify(message));
+        
+        // Reset UI
+        resetResponseUI();
+        setButtonLoading(button, false);
+    } catch (error) {
+        console.error('Error sending error response:', error);
+        alert('Failed to send error response');
+        setButtonLoading(button, false);
+    }
+}
+
+function send429Error() {
+    if (!currentRequestId) return;
     
-    // Reset UI
-    resetResponseUI();
+    const button = document.getElementById('send-429');
+    setButtonLoading(button, true);
+    
+    try {
+        const message = {
+            type: 'error',
+            request_id: currentRequestId,
+            error: 'Too Many Requests',
+            message: 'Rate limit exceeded. Please try again later.',
+            status_code: 429
+        };
+        
+        ws.send(JSON.stringify(message));
+        
+        // Reset UI
+        resetResponseUI();
+        setButtonLoading(button, false);
+    } catch (error) {
+        console.error('Error sending 429 error:', error);
+        alert('Failed to send 429 error');
+        setButtonLoading(button, false);
+    }
+}
+
+function sendCustomError() {
+    if (!currentRequestId) return;
+    
+    const button = document.getElementById('send-custom-error');
+    setButtonLoading(button, true);
+    
+    try {
+        const statusCode = parseInt(document.getElementById('custom-status-code').value);
+        const errorMessage = document.getElementById('custom-error-message').value;
+        const errorDetail = document.getElementById('custom-error-detail').value;
+        
+        // Validate status code
+        if (isNaN(statusCode) || statusCode < 100 || statusCode > 599) {
+            alert('Please enter a valid HTTP status code between 100 and 599');
+            setButtonLoading(button, false);
+            return;
+        }
+        
+        // Validate required fields
+        if (!errorMessage.trim()) {
+            alert('Please enter an error message');
+            setButtonLoading(button, false);
+            return;
+        }
+        
+        const message = {
+            type: 'error',
+            request_id: currentRequestId,
+            error: errorMessage,
+            message: errorDetail,
+            status_code: statusCode
+        };
+        
+        ws.send(JSON.stringify(message));
+        
+        // Reset UI
+        resetResponseUI();
+        setButtonLoading(button, false);
+    } catch (error) {
+        console.error('Error sending custom error:', error);
+        alert('Failed to send custom error');
+        setButtonLoading(button, false);
+    }
+}
+
+function setPresetError(statusCode, errorMessage, errorDetail) {
+    document.getElementById('custom-status-code').value = statusCode;
+    document.getElementById('custom-error-message').value = errorMessage;
+    document.getElementById('custom-error-detail').value = errorDetail;
 }
 
 function resetResponseUI() {
@@ -707,35 +820,45 @@ function toggleHistoryItem(index) {
 function sendDefaultResponse() {
     if (!currentRequestId) return;
     
-    // Check if it's an embeddings request
-    const embeddingOptions = document.getElementById('embedding-options');
-    if (!embeddingOptions.classList.contains('hidden')) {
-        // Send default random embedding
-        const message = {
-            type: 'response',
-            request_id: currentRequestId,
-            response: '',
-            embedding_type: { type: 'random' }
-        };
-        
-        ws.send(JSON.stringify(message));
-    } else {
-        // Send default text response
-        const defaultMessage = "Hello! I'm the AI assistant. How can I help you today?";
-        const shouldStream = document.getElementById('stream-response').checked;
-        
-        const message = {
-            type: 'response',
-            request_id: currentRequestId,
-            response: defaultMessage,
-            stream: shouldStream
-        };
-        
-        ws.send(JSON.stringify(message));
-    }
+    const button = document.getElementById('send-default');
+    setButtonLoading(button, true);
     
-    // Reset UI
-    resetResponseUI();
+    try {
+        // Check if it's an embeddings request
+        const embeddingOptions = document.getElementById('embedding-options');
+        if (!embeddingOptions.classList.contains('hidden')) {
+            // Send default random embedding
+            const message = {
+                type: 'response',
+                request_id: currentRequestId,
+                response: '',
+                embedding_type: { type: 'random' }
+            };
+            
+            ws.send(JSON.stringify(message));
+        } else {
+            // Send default text response
+            const defaultMessage = "Hello! I'm the AI assistant. How can I help you today?";
+            const shouldStream = document.getElementById('stream-response').checked;
+            
+            const message = {
+                type: 'response',
+                request_id: currentRequestId,
+                response: defaultMessage,
+                stream: shouldStream
+            };
+            
+            ws.send(JSON.stringify(message));
+        }
+        
+        // Reset UI
+        resetResponseUI();
+        setButtonLoading(button, false);
+    } catch (error) {
+        console.error('Error sending default response:', error);
+        alert('Failed to send default response');
+        setButtonLoading(button, false);
+    }
 }
 
 // Theme management
@@ -864,6 +987,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('send-response').addEventListener('click', sendResponse);
     document.getElementById('send-default').addEventListener('click', sendDefaultResponse);
     document.getElementById('send-error').addEventListener('click', sendError);
+    document.getElementById('send-429').addEventListener('click', send429Error);
+    document.getElementById('send-custom-error').addEventListener('click', sendCustomError);
+    
+    // Preset error button event listeners
+    document.querySelectorAll('.btn-preset').forEach(button => {
+        button.addEventListener('click', () => {
+            const statusCode = button.getAttribute('data-status');
+            const errorMessage = button.getAttribute('data-message');
+            const errorDetail = button.getAttribute('data-detail');
+            setPresetError(statusCode, errorMessage, errorDetail);
+        });
+    });
     
     // Export button event listeners
     document.getElementById('export-json').addEventListener('click', exportToJSON);
