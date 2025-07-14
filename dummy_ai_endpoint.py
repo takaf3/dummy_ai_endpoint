@@ -441,7 +441,9 @@ async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Op
         })
         
         if web_response.get("type") == "error":
-            raise Exception(web_response.get("message", "Unknown error"))
+            error_message = web_response.get("message", "Unknown error")
+            status_code = web_response.get("status_code", 500)
+            raise HTTPException(status_code=status_code, detail=error_message)
         
         user_response = web_response.get("response", "")
     
@@ -456,6 +458,12 @@ async def chat_completions(request: ChatCompletionRequest, raw_request: Request,
     try:
         stream_param = request.stream if request.stream is not None else False
         user_response = await handle_request("/v1/chat/completions", request_dict, stream_param)
+    except HTTPException as e:
+        return Response(
+            content=json.dumps({"error": {"message": e.detail, "type": "server_error"}}),
+            status_code=e.status_code,
+            media_type="application/json"
+        )
     except Exception as e:
         return Response(
             content=json.dumps({"error": {"message": str(e), "type": "server_error"}}),
@@ -567,6 +575,12 @@ async def completions(request: CompletionRequest, raw_request: Request, _: Any =
     try:
         stream_param = request.stream if request.stream is not None else False
         user_response = await handle_request("/v1/completions", request_dict, stream_param)
+    except HTTPException as e:
+        return Response(
+            content=json.dumps({"error": {"message": e.detail, "type": "server_error"}}),
+            status_code=e.status_code,
+            media_type="application/json"
+        )
     except Exception as e:
         return Response(
             content=json.dumps({"error": {"message": str(e), "type": "server_error"}}),
@@ -678,15 +692,17 @@ async def create_embeddings(request: EmbeddingRequest, _: Any = Depends(verify_a
         })
         
         if response_data["type"] == "error":
+            error_message = response_data.get("message", response_data.get("response", "Unknown error"))
+            status_code = response_data.get("status_code", 400)
             return Response(
                 content=json.dumps({
                     "error": {
-                        "message": response_data["response"],
+                        "message": error_message,
                         "type": "mock_error",
                         "code": "mock_error"
                     }
                 }),
-                status_code=400,
+                status_code=status_code,
                 media_type="application/json"
             )
         
@@ -798,6 +814,12 @@ async def anthropic_messages(request: AnthropicRequest, raw_request: Request, _:
     try:
         stream_param = request.stream if request.stream is not None else False
         user_response = await handle_request("/v1/messages (Anthropic)", request_dict, stream_param)
+    except HTTPException as e:
+        return Response(
+            content=json.dumps({"error": {"type": "error", "message": e.detail}}),
+            status_code=e.status_code,
+            media_type="application/json"
+        )
     except Exception as e:
         return Response(
             content=json.dumps({"error": {"type": "error", "message": str(e)}}),
@@ -1006,10 +1028,16 @@ async def websocket_endpoint(websocket: WebSocket):
             
             elif data["type"] == "error" and data["request_id"] in pending_requests:
                 # Store the error
-                pending_requests[data["request_id"]]["response"] = {
+                error_response = {
                     "type": "error",
                     "message": data.get("message", "Unknown error")
                 }
+                
+                # Add status code if provided (for 429 rate limiting)
+                if "status_code" in data:
+                    error_response["status_code"] = data["status_code"]
+                
+                pending_requests[data["request_id"]]["response"] = error_response
                 # Signal that response is ready
                 pending_requests[data["request_id"]]["event"].set()
     
