@@ -35,6 +35,10 @@ Perfect for debugging applications where you don't have access to the source cod
   - Auto-generated secure API keys
   - Compatible with both OpenAI and Anthropic authentication styles
   - API key displayed in console and web UI
+- **Custom Error Responses**: Send custom HTTP error codes and messages
+  - Preset error buttons for common errors (429, 500, 502, 503)
+  - Custom status codes, error messages, and details
+  - Perfect for testing error handling and resilience
 
 ## 📁 Project Structure
 
@@ -56,10 +60,9 @@ dummy_ai_endpoint/
 │   ├── example_anthropic_sdk.py
 │   ├── example_embeddings_client.py
 │   └── sample_embeddings.json
-├── docs/               # Additional documentation
-│   └── CLAUDE.md      # Claude AI assistant instructions
-└── tests/             # Test files
-    └── test_export.py
+├── tests/              # Test files
+│   └── test_export.py
+└── test_custom_errors.py # Script to test custom error responses
 ```
 
 ## 📋 Requirements
@@ -210,9 +213,13 @@ Or press ENTER to use default message: 'Hello! I'm the AI assistant. How can I h
 **In Web UI Mode**, you'll:
 1. See incoming requests in real-time on the web interface
 2. Type your response in the text area
-3. Click "Send Response", "Send Default", or "Send Error"
-4. View request history and details
-5. Toggle between light and dark mode with the 🌙/☀️ button
+3. Click "Send Response", "Send Default", "Send Error", or use custom error options
+4. For custom errors:
+   - Enter HTTP status code (100-599)
+   - Specify error message and details
+   - Use preset buttons for common errors (429, 500, 502, 503)
+5. View request history and details
+6. Toggle between light and dark mode with the 🌙/☀️ button
 
 ### 🧪 Testing with Example Clients
 
@@ -227,6 +234,9 @@ python examples/example_anthropic_client.py
 
 # Test OpenAI Embeddings API
 python examples/example_embeddings_client.py
+
+# Test Custom Error Responses
+python test_custom_errors.py
 
 # When using remote mode, provide the API key:
 python examples/example_openai_client.py YOUR_API_KEY_HERE
@@ -494,7 +504,11 @@ Base64 image data is automatically truncated in logs to keep them readable while
 | `/v1/models` | GET | List available models | OpenAI |
 | `/v1/chat/completions` | POST | Chat completions (GPT-3.5/4) | OpenAI |
 | `/v1/completions` | POST | Text completions (GPT-3) | OpenAI |
+| `/v1/embeddings` | POST | Text embeddings | OpenAI |
 | `/v1/messages` | POST | Messages (Claude) | Anthropic |
+| `/server_info` | GET | Detailed server information (disabled in remote mode) | - |
+| `/api_key_info` | GET | API key info for web UI (web mode only) | - |
+| `/ws` | WebSocket | Real-time UI communication | - |
 
 ## 🎯 Command Line Options
 
@@ -506,6 +520,7 @@ Options:
   --mode {cli,web}  Response mode: 'cli' for terminal, 'web' for browser UI (default: cli)
   --port PORT       Port to run the server on (default: 8000)
   --host HOST       Host to bind the server to (default: 0.0.0.0)
+  --remote          Enable remote mode with API key authentication
 ```
 
 ## 💡 Use Cases
@@ -515,6 +530,27 @@ Options:
 - **Analyze usage**: Log and analyze prompt patterns and costs
 - **Development**: Test your app without burning API credits
 - **Security auditing**: Inspect what data is being sent to LLMs
+
+## 📚 Additional Features
+
+### Custom Error Responses
+
+The web UI includes a dedicated section for sending custom error responses:
+
+1. **Custom Status Code**: Enter any HTTP status code (100-599)
+2. **Error Message**: Specify a custom error message
+3. **Error Details**: Provide detailed error description
+4. **Preset Error Buttons**: Quick access to common errors:
+   - 503 Service Unavailable
+   - 502 Bad Gateway
+   - 500 Internal Server Error
+   - 429 Rate Limit (via dedicated button)
+
+This feature is perfect for:
+- Testing application error handling
+- Simulating rate limits and service outages
+- Debugging retry logic and fallback mechanisms
+- Stress testing error recovery
 
 ## 📚 Documentation
 
