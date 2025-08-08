@@ -7,17 +7,23 @@
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1 class="title">Dummy AI Endpoint</h1>
-    <button id="theme-toggle" aria-label="Toggle theme">🌙</button>
+  <header class="menubar">
+    <span class="app-name">Dummy AI Endpoint</span>
+    <button id="theme-toggle" class="menu-btn" aria-label="Toggle theme">🌙</button>
   </header>
-  <main class="main">
-    <section class="panel" id="request-panel">
-      <h2>Incoming Request</h2>
+  <main class="desktop">
+    <section class="window" id="request-panel">
+      <div class="title-bar">
+        <div class="window-controls"><span></span><span></span><span></span></div>
+        <span class="title">Incoming Request</span>
+      </div>
       <pre id="request-display">Waiting for requests...</pre>
     </section>
-    <section class="panel" id="response-panel">
-      <h2>Your Response</h2>
+    <section class="window" id="response-panel">
+      <div class="title-bar">
+        <div class="window-controls"><span></span><span></span><span></span></div>
+        <span class="title">Your Response</span>
+      </div>
       <textarea id="response-input" rows="8" placeholder="Type your response here..."></textarea>
       <div class="controls">
         <label class="stream-label"><input type="checkbox" id="stream-response" /> Stream</label>
@@ -39,3 +45,4 @@
   <script src="/static/script.js"></script>
 </body>
 </html>
+
