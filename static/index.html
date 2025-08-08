@@ -1,162 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dummy AI Endpoint - Web UI</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dummy AI Endpoint</title>
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-    <!-- Theme Toggle Button -->
-    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-        <span class="theme-toggle-icon" id="theme-icon">🌙</span>
-        <span class="theme-toggle-text" id="theme-text">Dark</span>
-    </button>
-    
-    <div class="container">
-        <div class="page-grid">
-            <div class="primary-column">
-                <header class="app-header">
-                    <div class="title-wrap">
-                        <h1 class="brand">🤖 Dummy AI Endpoint</h1>
-                        <div class="badges">
-                            <span class="badge">Live</span>
-                            <span class="badge badge-outline">Web UI</span>
-                        </div>
-                    </div>
-                    <p class="subtitle">Intercept and control API responses in real-time</p>
-                </header>
-
-                <div class="status-bar">
-                    <div class="status-item">
-                        <span class="status-label">Server Status</span>
-                        <span id="server-status" class="status-chip status-connected">Connected</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Mode</span>
-                        <span class="status-chip">Web UI</span>
-                    </div>
-                </div>
-
-                <div id="api-key-section" class="api-key-section hidden">
-                    <div class="api-key-container">
-                        <h3>🔑 API Key Required</h3>
-                        <p>This server is running in remote mode. Use this API key for authentication:</p>
-                        <div class="api-key-display">
-                            <code id="api-key-value">Loading...</code>
-                            <button id="copy-api-key" class="copy-button">📋 Copy</button>
-                        </div>
-                        <p class="api-key-hint">Include in requests as: <code>Authorization: Bearer &lt;api-key&gt;</code></p>
-                    </div>
-                </div>
-
-                <div class="main-content">
-                    <div class="request-section">
-                        <h2>📥 Incoming Request</h2>
-                        <div id="request-info" class="info-box">
-                            <p class="waiting-message">Waiting for requests...</p>
-                        </div>
-                    </div>
-
-                    <div class="response-section">
-                        <div class="section-header">
-                            <h2>📤 Your Response</h2>
-                            <div class="section-actions">
-                                <button id="send-default" class="btn btn-primary">Quick Reply</button>
-                            </div>
-                        </div>
-                        <div id="response-controls" class="hidden">
-                            <textarea id="response-input" placeholder="Type your response here..." rows="10"></textarea>
-                            <div class="response-options">
-                                <label>
-                                    <input type="checkbox" id="stream-response"> Stream response
-                                </label>
-                            </div>
-                            <div id="embedding-options" class="embedding-options hidden">
-                                <h3>Embedding Response Type</h3>
-                                <select id="embedding-type">
-                                    <option value="random">🎲 Random normalized - Generate random unit vectors</option>
-                                    <option value="zero">0️⃣ Zero vector - All zeros (edge case testing)</option>
-                                    <option value="sequential">📈 Sequential pattern - Incrementing values</option>
-                                    <option value="hash">🔐 Hash-based - Deterministic from input text</option>
-                                    <option value="file">📁 From file - Load from JSON file</option>
-                                    <option value="custom">✏️ Custom JSON - Manual vector input</option>
-                                </select>
-                                <div id="embedding-file-input" class="hidden">
-                                    <label for="embedding-filepath">File path (relative to server directory):</label>
-                                    <input type="text" id="embedding-filepath" placeholder="e.g., sample_embeddings.json">
-                                </div>
-                                <div id="embedding-custom-input" class="hidden">
-                                    <label for="embedding-custom-json">Custom embedding vector (JSON array):</label>
-                                    <textarea id="embedding-custom-json" placeholder='[0.1, 0.2, 0.3, 0.4, 0.5]' rows="5"></textarea>
-                                </div>
-                            </div>
-                            <div class="button-group">
-                                <button id="send-response" class="btn btn-primary">Send Response</button>
-                                <button id="send-error" class="btn btn-secondary">Send Error</button>
-                                <button id="send-429" class="btn btn-secondary">Send 429 (Rate Limit)</button>
-                            </div>
-                            <div class="custom-error-section">
-                                <h3>🚨 Custom Error Response</h3>
-                                <div class="custom-error-controls">
-                                    <div class="input-group">
-                                        <label for="custom-status-code">HTTP Status Code:</label>
-                                        <input type="number" id="custom-status-code" placeholder="e.g., 503, 502, 500" min="100" max="599" value="500">
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="custom-error-message">Error Message:</label>
-                                        <input type="text" id="custom-error-message" placeholder="e.g., Service Unavailable" value="Internal Server Error">
-                                    </div>
-                                    <div class="input-group">
-                                        <label for="custom-error-detail">Error Detail:</label>
-                                        <textarea id="custom-error-detail" placeholder="Detailed error description..." rows="3">The server encountered an error processing your request.</textarea>
-                                    </div>
-                                    <div class="preset-buttons">
-                                        <label>Quick Presets:</label>
-                                        <div class="preset-button-group">
-                                            <button class="btn btn-preset" data-status="503" data-message="Service Unavailable" data-detail="The service is temporarily unavailable. Please try again later.">503 Service Unavailable</button>
-                                            <button class="btn btn-preset" data-status="502" data-message="Bad Gateway" data-detail="The server received an invalid response from an upstream server.">502 Bad Gateway</button>
-                                            <button class="btn btn-preset" data-status="500" data-message="Internal Server Error" data-detail="The server encountered an error processing your request.">500 Internal Error</button>
-                                            <button class="btn btn-preset" data-status="404" data-message="Not Found" data-detail="The requested resource was not found.">404 Not Found</button>
-                                            <button class="btn btn-preset" data-status="403" data-message="Forbidden" data-detail="Access to the requested resource is forbidden.">403 Forbidden</button>
-                                        </div>
-                                    </div>
-                                    <button id="send-custom-error" class="btn btn-secondary">Send Custom Error</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="waiting-for-request" class="info-box">
-                            <p class="waiting-message">No active request</p>
-                        </div>
-                    </div>
-                </div>
-
-                <footer class="footer">
-                    <span>Built for testing LLM integrations</span>
-                </footer>
-            </div>
-            <aside class="sidebar">
-                <div class="history-section">
-                    <div class="history-header-controls">
-                        <h2>📜 Request History</h2>
-                        <div class="export-buttons">
-                            <button id="export-json" class="btn btn-export" title="Export as JSON">Export JSON</button>
-                            <button id="export-csv" class="btn btn-export" title="Export as CSV">Export CSV</button>
-                        </div>
-                    </div>
-                    <div id="history-list" class="history-list">
-                        <p class="no-history">No requests yet</p>
-                    </div>
-                </div>
-            </aside>
-        </div>
-    </div>
-
-    <div id="toast-root" aria-live="polite" aria-atomic="true"></div>
-
-    <script src="/static/script.js"></script>
+  <header class="topbar">
+    <h1 class="title">Dummy AI Endpoint</h1>
+    <button id="theme-toggle" aria-label="Toggle theme">🌙</button>
+  </header>
+  <main class="main">
+    <section class="panel" id="request-panel">
+      <h2>Incoming Request</h2>
+      <pre id="request-display">Waiting for requests...</pre>
+    </section>
+    <section class="panel" id="response-panel">
+      <h2>Your Response</h2>
+      <textarea id="response-input" rows="8" placeholder="Type your response here..."></textarea>
+      <div class="controls">
+        <label class="stream-label"><input type="checkbox" id="stream-response" /> Stream</label>
+        <button id="send-response" class="btn primary">Send</button>
+        <button id="send-default" class="btn">Quick Reply</button>
+        <button id="send-error" class="btn">Send 500</button>
+        <button id="send-429" class="btn">Send 429</button>
+      </div>
+      <div class="custom-error">
+        <h3>Custom Error</h3>
+        <input id="custom-status-code" type="number" placeholder="Status code" min="100" max="599" />
+        <input id="custom-error-message" type="text" placeholder="Error message" />
+        <textarea id="custom-error-detail" rows="3" placeholder="Error details..."></textarea>
+        <button id="send-custom-error" class="btn">Send Custom Error</button>
+      </div>
+    </section>
+  </main>
+  <div id="toast" class="toast"></div>
+  <script src="/static/script.js"></script>
 </body>
 </html>
