@@ -6,42 +6,49 @@
 
 /* CSS Variables for theme colors */
 :root {
-    /* Light theme colors */
-    --bg-primary: #e9e9eb;
-    --bg-secondary: #fdfdfd;
-    --bg-tertiary: #f4f4f5;
-    --bg-hover: #e2e2e2;
-    --text-primary: #1c1c1e;
-    --text-secondary: #3a3a3c;
-    --text-muted: #8e8e93;
+    /* Aqua light theme */
+    --bg-primary: #e5e5e5;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f7f7f7;
+    --bg-hover: #dcdcdc;
+    --text-primary: #000000;
+    --text-secondary: #2e2e2e;
+    --text-muted: #6e6e6e;
     --text-heading: #000000;
-    --text-label: #4a4a4a;
-    --border-primary: #d1d1d6;
-    --border-secondary: #c7c7cc;
-    --border-dashed: #c7c7cc;
-    --shadow: rgba(0, 0, 0, 0.15);
-    --status-connected: #34c759;
+    --text-label: #3a3a3a;
+    --border-primary: #b5b5b5;
+    --border-secondary: #c1c1c1;
+    --border-dashed: #b5b5b5;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --status-connected: #4cd964;
     --status-disconnected: #ff3b30;
-    --link-color: #007aff;
-    --btn-primary-bg: #007aff;
-    --btn-primary-hover: #0063e0;
-    --btn-secondary-bg: #d0d0d0;
-    --btn-secondary-hover: #bcbcbc;
-    --code-bg: #f5f5f5;
-    --message-bg: #f9f9f9;
-    --tool-bg: #fbfbfb;
-    --warning-bg: #fff2cd;
-    --warning-border: #ffe08a;
+    --link-color: #0a84ff;
+    --btn-primary-bg: #0a84ff;
+    --btn-primary-hover: #006de6;
+    --btn-secondary-bg: #e0e0e0;
+    --btn-secondary-hover: #cfcfcf;
+    --code-bg: #f4f4f4;
+    --message-bg: #fbfbfb;
+    --tool-bg: #ffffff;
+    --warning-bg: #fff9d6;
+    --warning-border: #ffe58f;
 
-    /* Button gradient colors */
-    --gradient-primary-start: #007aff;
-    --gradient-primary-end: #005bbb;
-    --gradient-secondary-start: #d0d0d0;
-    --gradient-secondary-end: #bcbcbc;
-    --gradient-error-start: #ff3b30;
+    /* Aqua gradients */
+    --gradient-primary-start: #6ba6ff;
+    --gradient-primary-end: #006de6;
+    --gradient-secondary-start: #f6f6f6;
+    --gradient-secondary-end: #dcdcdc;
+    --gradient-error-start: #ff5f56;
     --gradient-error-end: #d70015;
-    --gradient-success-start: #34c759;
-    --gradient-success-end: #00b894;
+    --gradient-success-start: #4cd964;
+    --gradient-success-end: #0bb20c;
+
+    --pinstripe-light: #e0e0e0;
+    --pinstripe-dark: #d5d5d5;
+    --titlebar-light: #f6f6f6;
+    --titlebar-dark: #cfcfcf;
+    --dock-bg: rgba(255, 255, 255, 0.75);
+    --dock-border: rgba(0, 0, 0, 0.2);
 }
 
 /* Dark theme colors */
@@ -84,8 +91,14 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: var(--bg-primary);
+    font-family: 'Lucida Grande', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: repeating-linear-gradient(
+        0deg,
+        var(--pinstripe-light) 0px,
+        var(--pinstripe-light) 1px,
+        var(--pinstripe-dark) 1px,
+        var(--pinstripe-dark) 2px
+    );
     color: var(--text-primary);
     line-height: 1.6;
     transition: background-color 0.3s ease, color 0.3s ease;
@@ -100,23 +113,71 @@ body {
 /* Mac-style window layout */
 .mac-window {
     max-width: 1200px;
-    margin: 40px auto;
+    margin: 60px auto;
     border: 1px solid var(--border-primary);
-    border-radius: 12px;
+    border-radius: 16px;
     background: var(--bg-secondary);
-    box-shadow: 0 20px 40px var(--shadow);
+    box-shadow: 0 30px 60px var(--shadow);
     overflow: hidden;
 }
 
-.title-bar {
-    height: 34px;
-    background: var(--bg-tertiary);
-    position: relative;
+.mac-menu-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    background:
+        repeating-linear-gradient(
+            -45deg,
+            rgba(255, 255, 255, 0.4) 0px,
+            rgba(255, 255, 255, 0.4) 1px,
+            rgba(255, 255, 255, 0) 1px,
+            rgba(255, 255, 255, 0) 3px
+        ),
+        linear-gradient(to bottom, var(--titlebar-light), var(--titlebar-dark));
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-bottom: 1px solid var(--border-primary);
+    justify-content: space-between;
+    padding: 0 10px;
+    font-size: 13px;
+    user-select: none;
+    z-index: 1000;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6), 0 -1px 0 rgba(0, 0, 0, 0.2);
 }
+
+.mac-menu-bar .menu-left,
+.mac-menu-bar .menu-right {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.mac-menu-bar .apple-logo {
+    font-size: 16px;
+}
+
+.mac-menu-bar .menu-item {
+    cursor: default;
+}
+
+ .title-bar {
+     height: 38px;
+     background:
+         repeating-linear-gradient(
+             -45deg,
+             rgba(255, 255, 255, 0.4) 0px,
+             rgba(255, 255, 255, 0.4) 1px,
+             rgba(255, 255, 255, 0) 1px,
+             rgba(255, 255, 255, 0) 3px
+         ),
+         linear-gradient(to bottom, var(--titlebar-light), var(--titlebar-dark));
+     position: relative;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     border-bottom: 1px solid var(--border-primary);
+ }
 
 .traffic-lights {
     position: absolute;
@@ -125,16 +186,22 @@ body {
     gap: 8px;
 }
 
-.traffic-light {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
-}
+ .traffic-light {
+     width: 14px;
+     height: 14px;
+     border-radius: 50%;
+     box-shadow: 0 0 2px rgba(0, 0, 0, 0.6) inset, 0 0 1px rgba(0, 0, 0, 0.8);
+ }
 
-.traffic-light.close { background: #ff5f57; }
-.traffic-light.minimize { background: #ffbd2e; }
-.traffic-light.maximize { background: #28c840; }
+ .traffic-light.close {
+     background: radial-gradient(circle at 30% 30%, #ffb3b0, #ff5f56);
+ }
+ .traffic-light.minimize {
+     background: radial-gradient(circle at 30% 30%, #ffe3a0, #ffbd2e);
+ }
+ .traffic-light.maximize {
+     background: radial-gradient(circle at 30% 30%, #b6f1a9, #28c840);
+ }
 
 .title-bar-title {
     font-size: 14px;
@@ -317,12 +384,6 @@ header p {
     cursor: pointer;
 }
 
-.button-group {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 20px;
-}
 
 /* Modern Button Design System */
 .btn {
@@ -1433,4 +1494,62 @@ header p {
 
 .btn-primary:focus-visible {
     animation: pulse 1.5s infinite;
+}
+
+/* macOS X-style dock */
+.dock {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--dock-bg);
+    backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--dock-border);
+    display: flex;
+    gap: 20px;
+    z-index: 1000;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.dock-icon {
+    background: none;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: 'Lucida Grande', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.dock-icon .icon {
+    font-size: 32px;
+    margin-bottom: 4px;
+}
+
+.dock-icon:hover {
+    transform: scale(1.3);
+}
+
+.dock-icon.loading {
+    color: transparent;
+    position: relative;
+}
+
+.dock-icon.loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 16px;
+    left: 50%;
+    margin-left: -10px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spinner 0.8s linear infinite;
 }
