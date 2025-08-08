@@ -7,13 +7,22 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- Theme Toggle Button -->
-    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-        <span class="theme-toggle-icon" id="theme-icon">🌙</span>
-        <span class="theme-toggle-text" id="theme-text">Dark</span>
-    </button>
-    
-    <div class="container">
+    <div class="mac-window">
+        <div class="title-bar">
+            <div class="traffic-lights">
+                <span class="traffic-light close"></span>
+                <span class="traffic-light minimize"></span>
+                <span class="traffic-light maximize"></span>
+            </div>
+            <div class="title-bar-title">Dummy AI Endpoint</div>
+            <!-- Theme Toggle Button -->
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <span class="theme-toggle-icon" id="theme-icon">🌙</span>
+                <span class="theme-toggle-text" id="theme-text">Dark</span>
+            </button>
+        </div>
+        <div class="window-content">
+            <div class="container">
         <header>
             <h1>🤖 Dummy AI Endpoint</h1>
             <p>Intercept and control API responses in real-time</p>
@@ -129,6 +138,8 @@
             </div>
             <div id="history-list" class="history-list">
                 <p class="no-history">No requests yet</p>
+            </div>
+        </div>
             </div>
         </div>
     </div>
