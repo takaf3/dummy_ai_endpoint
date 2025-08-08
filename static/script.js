@@ -1,6 +1,7 @@
 let ws = null;
 let currentRequestId = null;
 let requestHistory = [];
+let toastTimeouts = [];
 
 // Button loading state helper
 function setButtonLoading(button, isLoading) {
@@ -11,6 +12,24 @@ function setButtonLoading(button, isLoading) {
         button.classList.remove('loading');
         button.disabled = false;
     }
+}
+
+// Toast notifications
+function showToast(message, type = 'success', durationMs = 2200) {
+    const root = document.getElementById('toast-root');
+    if (!root) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<span>${message}</span><span class="close">✕</span>`;
+    const close = () => {
+        if (!toast.parentElement) return;
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 200);
+    };
+    toast.querySelector('.close').addEventListener('click', close);
+    root.appendChild(toast);
+    const t = setTimeout(close, durationMs);
+    toastTimeouts.push(t);
 }
 
 // Fetch and display API key information
@@ -28,16 +47,17 @@ async function fetchApiKeyInfo() {
                 navigator.clipboard.writeText(data.api_key).then(() => {
                     const button = document.getElementById('copy-api-key');
                     button.textContent = '✅ Copied!';
-                    setTimeout(() => {
-                        button.textContent = '📋 Copy';
-                    }, 2000);
+                    showToast('API key copied to clipboard');
+                    setTimeout(() => { button.textContent = '📋 Copy'; }, 1600);
                 }).catch(err => {
                     console.error('Failed to copy:', err);
+                    showToast('Failed to copy API key', 'error');
                 });
             });
         }
     } catch (error) {
         console.error('Failed to fetch API key info:', error);
+        showToast('Failed to fetch API key info', 'error');
     }
 }
 
@@ -48,6 +68,7 @@ function connectWebSocket() {
     ws.onopen = () => {
         console.log('WebSocket connected');
         updateServerStatus(true);
+        showToast('Connected to server');
     };
     
     ws.onmessage = (event) => {
@@ -58,11 +79,13 @@ function connectWebSocket() {
     ws.onclose = () => {
         console.log('WebSocket disconnected');
         updateServerStatus(false);
+        showToast('Disconnected. Reconnecting…', 'error', 3000);
         setTimeout(connectWebSocket, 3000); // Reconnect after 3 seconds
     };
     
     ws.onerror = (error) => {
         console.error('WebSocket error:', error);
+        showToast('WebSocket error', 'error');
     };
 }
 
@@ -183,7 +206,7 @@ function formatFunctionCall(functionCall) {
 function updateServerStatus(connected) {
     const statusEl = document.getElementById('server-status');
     statusEl.textContent = connected ? 'Connected' : 'Disconnected';
-    statusEl.className = connected ? 'status-value status-connected' : 'status-value status-disconnected';
+    statusEl.className = connected ? 'status-chip status-connected' : 'status-chip status-disconnected';
 }
 
 function handleMessage(data) {
@@ -434,7 +457,7 @@ function sendResponse() {
         if (embeddingType === 'file') {
             const filepath = document.getElementById('embedding-filepath').value.trim();
             if (!filepath) {
-                alert('Please enter a filepath');
+                showToast('Please enter a filepath', 'error');
                 setButtonLoading(button, false);
                 return;
             }
@@ -442,14 +465,14 @@ function sendResponse() {
         } else if (embeddingType === 'custom') {
             const customJson = document.getElementById('embedding-custom-json').value.trim();
             if (!customJson) {
-                alert('Please enter custom JSON');
+                showToast('Please enter custom JSON', 'error');
                 setButtonLoading(button, false);
                 return;
             }
             try {
                 embeddingData.data = JSON.parse(customJson);
             } catch (e) {
-                alert('Invalid JSON: ' + e.message);
+                showToast('Invalid JSON: ' + e.message, 'error');
                 setButtonLoading(button, false);
                 return;
             }
@@ -469,7 +492,7 @@ function sendResponse() {
             const shouldStream = document.getElementById('stream-response').checked;
             
             if (!responseText.trim()) {
-                alert('Please enter a response');
+                showToast('Please enter a response', 'error');
                 setButtonLoading(button, false);
                 return;
             }
@@ -489,7 +512,7 @@ function sendResponse() {
         setButtonLoading(button, false);
     } catch (error) {
         console.error('Error sending response:', error);
-        alert('Failed to send response');
+        showToast('Failed to send response', 'error');
         setButtonLoading(button, false);
     }
 }
@@ -515,7 +538,7 @@ function sendError() {
         setButtonLoading(button, false);
     } catch (error) {
         console.error('Error sending error response:', error);
-        alert('Failed to send error response');
+        showToast('Failed to send error response', 'error');
         setButtonLoading(button, false);
     }
 }
@@ -542,7 +565,7 @@ function send429Error() {
         setButtonLoading(button, false);
     } catch (error) {
         console.error('Error sending 429 error:', error);
-        alert('Failed to send 429 error');
+        showToast('Failed to send 429 error', 'error');
         setButtonLoading(button, false);
     }
 }
@@ -560,14 +583,14 @@ function sendCustomError() {
         
         // Validate status code
         if (isNaN(statusCode) || statusCode < 100 || statusCode > 599) {
-            alert('Please enter a valid HTTP status code between 100 and 599');
+            showToast('Enter a valid HTTP status code (100–599)', 'error');
             setButtonLoading(button, false);
             return;
         }
         
         // Validate required fields
         if (!errorMessage.trim()) {
-            alert('Please enter an error message');
+            showToast('Please enter an error message', 'error');
             setButtonLoading(button, false);
             return;
         }
@@ -587,7 +610,7 @@ function sendCustomError() {
         setButtonLoading(button, false);
     } catch (error) {
         console.error('Error sending custom error:', error);
-        alert('Failed to send custom error');
+        showToast('Failed to send custom error', 'error');
         setButtonLoading(button, false);
     }
 }
@@ -856,7 +879,7 @@ function sendDefaultResponse() {
         setButtonLoading(button, false);
     } catch (error) {
         console.error('Error sending default response:', error);
-        alert('Failed to send default response');
+        showToast('Failed to send default response', 'error');
         setButtonLoading(button, false);
     }
 }
@@ -1010,6 +1033,16 @@ document.addEventListener('DOMContentLoaded', () => {
             sendResponse();
         }
     });
+
+    // Auto-grow textarea
+    const responseInput = document.getElementById('response-input');
+    const autoGrow = () => {
+        responseInput.classList.add('auto-grow');
+        responseInput.style.height = 'auto';
+        responseInput.style.height = (responseInput.scrollHeight) + 'px';
+    };
+    ['input', 'change'].forEach(evt => responseInput.addEventListener(evt, autoGrow));
+    setTimeout(autoGrow, 0);
     
     // Embedding type change handler
     document.getElementById('embedding-type').addEventListener('change', (e) => {
