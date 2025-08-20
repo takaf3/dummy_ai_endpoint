@@ -213,6 +213,16 @@ function displayRequest(request) {
     html += `<div class="detail-item"><span class="label">Max Tokens:</span> <span class="value">${request.data.max_tokens || 'None'}</span></div>`;
     html += `<div class="detail-item"><span class="label">Stream:</span> <span class="value">${request.data.stream || false}</span></div>`;
     
+    // Display raw HTTP request if available (advanced mode)
+    if (request.raw_request) {
+        html += '<div class="raw-request-section" style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 20px;">';
+        html += '<h3 style="margin-bottom: 10px; color: #6b7280; font-size: 14px; font-weight: 600;">RAW HTTP REQUEST (Advanced Mode)</h3>';
+        html += '<pre style="background: #1f2937; color: #d1d5db; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; line-height: 1.5;">';
+        html += escapeHtml(request.raw_request);
+        html += '</pre>';
+        html += '</div>';
+    }
+    
     // Display Anthropic-specific fields
     if (request.endpoint.includes('Anthropic')) {
         if (request.data.system) {

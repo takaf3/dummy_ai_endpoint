@@ -18,7 +18,7 @@ def get_client():
     api_key = os.environ.get('DUMMY_AI_API_KEY') or (sys.argv[1] if len(sys.argv) > 1 else "test-key")
     return OpenAI(
         api_key=api_key,
-        base_url="http://localhost:8000/v1"
+        base_url="http://localhost:8001/v1"
     )
 
 def test_chat_completion():
@@ -450,7 +450,7 @@ def test_multimodal_multiple():
 
 if __name__ == "__main__":
     print("OpenAI API Mock Server - Example Client")
-    print("Make sure the mock server is running on http://localhost:8000")
+    print("Make sure the mock server is running on http://localhost:8001")
     print("\nUsage:")
     print("  python example_openai_client.py [API_KEY]")
     print("  DUMMY_AI_API_KEY=your-api-key python example_openai_client.py")

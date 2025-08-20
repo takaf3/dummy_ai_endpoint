@@ -44,6 +44,7 @@ websocket_clients = []
 response_mode = "cli"  # "cli" or "web"
 remote_mode = False
 api_key = None
+advanced_mode = False  # Show raw HTTP requests
 
 # API Key Security
 security = HTTPBearer(auto_error=False)
@@ -153,6 +154,35 @@ class Usage(BaseModel):
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
+
+async def format_raw_request(request: Request, body: bytes = None) -> str:
+    """Format the raw HTTP request for display"""
+    # Get request line
+    method = request.method
+    path = request.url.path
+    if request.url.query:
+        path += f"?{request.url.query}"
+    http_version = "HTTP/1.1"  # FastAPI typically uses HTTP/1.1
+    
+    # Build raw request string
+    raw_request = f"{method} {path} {http_version}\n"
+    
+    # Add headers
+    for header_name, header_value in request.headers.items():
+        raw_request += f"{header_name}: {header_value}\n"
+    
+    # Add body if present
+    if body:
+        raw_request += "\n"
+        try:
+            # Try to parse as JSON for pretty printing
+            json_body = json.loads(body)
+            raw_request += json.dumps(json_body, indent=2)
+        except:
+            # If not JSON, just decode as string
+            raw_request += body.decode('utf-8', errors='replace')
+    
+    return raw_request
 
 def log_request(endpoint: str, request_data: Dict[str, Any]):
     """Log the incoming request details, truncating base64 data in logs."""
@@ -274,13 +304,14 @@ def get_cli_embedding_response(prompt_info: str, dimensions: int) -> Dict[str, A
     else:
         return {"type": "random"}
 
-async def get_web_response(request_id: str, request_data: Dict[str, Any]) -> Dict[str, Any]:
+async def get_web_response(request_id: str, request_data: Dict[str, Any], raw_request: Optional[str] = None) -> Dict[str, Any]:
     """Get response from web UI"""
     # Store request in pending
     pending_requests[request_id] = {
         "data": request_data,
         "response": None,
-        "event": asyncio.Event()
+        "event": asyncio.Event(),
+        "raw_request": raw_request  # Include raw request if available
     }
     
     # Notify all connected WebSocket clients
@@ -289,7 +320,8 @@ async def get_web_response(request_id: str, request_data: Dict[str, Any]) -> Dic
         "request": {
             "id": request_id,
             "endpoint": request_data["endpoint"],
-            "data": request_data["data"]
+            "data": request_data["data"],
+            "raw_request": raw_request  # Include raw request if available
         }
     }
     
@@ -368,7 +400,7 @@ def embeddings_to_base64(embeddings: List[float]) -> str:
     # Encode to base64
     return base64.b64encode(binary_data).decode('utf-8')
 
-async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Optional[bool]) -> Any:
+async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Optional[bool], raw_request: Optional[str] = None) -> Any:
     """Handle request with appropriate response mode"""
     # Create prompt info for display
     prompt_info = f"Endpoint: {endpoint}\n"
@@ -438,7 +470,7 @@ async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Op
         web_response = await get_web_response(request_id, {
             "endpoint": endpoint,
             "data": request_data
-        })
+        }, raw_request)
         
         if web_response.get("type") == "error":
             error_message = web_response.get("message", "Unknown error")
@@ -453,11 +485,27 @@ async def handle_request(endpoint: str, request_data: Dict[str, Any], stream: Op
 async def chat_completions(request: ChatCompletionRequest, raw_request: Request, _: Any = Depends(verify_api_key)):
     """Handle chat completion requests"""
     request_dict = request.dict()
+    
+    # Capture raw request if in advanced mode
+    raw_body = None
+    if advanced_mode:
+        # Get the raw body
+        raw_body = await raw_request.body()
+        raw_http_request = await format_raw_request(raw_request, raw_body)
+        
+        # Display raw request in CLI mode
+        if response_mode == "cli":
+            print("\n" + "="*80)
+            print("RAW HTTP REQUEST:")
+            print("-"*80)
+            print(raw_http_request)
+            print("="*80 + "\n")
+    
     log_request("/v1/chat/completions", request_dict)
     
     try:
         stream_param = request.stream if request.stream is not None else False
-        user_response = await handle_request("/v1/chat/completions", request_dict, stream_param)
+        user_response = await handle_request("/v1/chat/completions", request_dict, stream_param, raw_http_request if advanced_mode else None)
     except HTTPException as e:
         return Response(
             content=json.dumps({"error": {"message": e.detail, "type": "server_error"}}),
@@ -570,11 +618,27 @@ async def chat_completions(request: ChatCompletionRequest, raw_request: Request,
 async def completions(request: CompletionRequest, raw_request: Request, _: Any = Depends(verify_api_key)):
     """Handle completion requests"""
     request_dict = request.dict()
+    
+    # Capture raw request if in advanced mode
+    raw_body = None
+    if advanced_mode:
+        # Get the raw body
+        raw_body = await raw_request.body()
+        raw_http_request = await format_raw_request(raw_request, raw_body)
+        
+        # Display raw request in CLI mode
+        if response_mode == "cli":
+            print("\n" + "="*80)
+            print("RAW HTTP REQUEST:")
+            print("-"*80)
+            print(raw_http_request)
+            print("="*80 + "\n")
+    
     log_request("/v1/completions", request_dict)
     
     try:
         stream_param = request.stream if request.stream is not None else False
-        user_response = await handle_request("/v1/completions", request_dict, stream_param)
+        user_response = await handle_request("/v1/completions", request_dict, stream_param, raw_http_request if advanced_mode else None)
     except HTTPException as e:
         return Response(
             content=json.dumps({"error": {"message": e.detail, "type": "server_error"}}),
@@ -657,8 +721,24 @@ async def completions(request: CompletionRequest, raw_request: Request, _: Any =
         return response
 
 @app.post("/v1/embeddings")
-async def create_embeddings(request: EmbeddingRequest, _: Any = Depends(verify_api_key)):
+async def create_embeddings(request: EmbeddingRequest, raw_request: Request, _: Any = Depends(verify_api_key)):
     """Handle OpenAI embeddings API requests"""
+    # Capture raw request if in advanced mode
+    raw_body = None
+    raw_http_request = None
+    if advanced_mode:
+        # Get the raw body
+        raw_body = await raw_request.body()
+        raw_http_request = await format_raw_request(raw_request, raw_body)
+        
+        # Display raw request in CLI mode
+        if response_mode == "cli":
+            print("\n" + "="*80)
+            print("RAW HTTP REQUEST:")
+            print("-"*80)
+            print(raw_http_request)
+            print("="*80 + "\n")
+    
     log_request("/v1/embeddings", request.model_dump())
     
     # Determine dimensions
@@ -689,7 +769,7 @@ async def create_embeddings(request: EmbeddingRequest, _: Any = Depends(verify_a
                 "inputs": inputs,
                 "encoding_format": request.encoding_format
             }
-        })
+        }, raw_http_request)
         
         if response_data["type"] == "error":
             error_message = response_data.get("message", response_data.get("response", "Unknown error"))
@@ -809,11 +889,27 @@ async def list_models(_: Any = Depends(verify_api_key)):
 async def anthropic_messages(request: AnthropicRequest, raw_request: Request, _: Any = Depends(verify_api_key)):
     """Handle Anthropic messages API requests"""
     request_dict = request.dict()
+    
+    # Capture raw request if in advanced mode
+    raw_body = None
+    if advanced_mode:
+        # Get the raw body
+        raw_body = await raw_request.body()
+        raw_http_request = await format_raw_request(raw_request, raw_body)
+        
+        # Display raw request in CLI mode
+        if response_mode == "cli":
+            print("\n" + "="*80)
+            print("RAW HTTP REQUEST:")
+            print("-"*80)
+            print(raw_http_request)
+            print("="*80 + "\n")
+    
     log_request("/v1/messages (Anthropic)", request_dict)
     
     try:
         stream_param = request.stream if request.stream is not None else False
-        user_response = await handle_request("/v1/messages (Anthropic)", request_dict, stream_param)
+        user_response = await handle_request("/v1/messages (Anthropic)", request_dict, stream_param, raw_http_request if advanced_mode else None)
     except HTTPException as e:
         return Response(
             content=json.dumps({"error": {"type": "error", "message": e.detail}}),
@@ -1057,10 +1153,13 @@ if __name__ == "__main__":
                         help="Host to bind the server to")
     parser.add_argument("--remote", action="store_true",
                         help="Run in remote mode with API key authentication")
+    parser.add_argument("--advanced", action="store_true",
+                        help="Show raw HTTP requests (available in both CLI and web modes)")
     
     args = parser.parse_args()
     response_mode = args.mode
     remote_mode = args.remote
+    advanced_mode = args.advanced
     
     # Generate API key if in remote mode
     if remote_mode:
@@ -1071,6 +1170,7 @@ if __name__ == "__main__":
     print("="*80)
     print(f"Mode: {response_mode.upper()}")
     print(f"Remote Mode: {'ENABLED' if remote_mode else 'DISABLED'}")
+    print(f"Advanced Mode: {'ENABLED' if advanced_mode else 'DISABLED'}")
     print(f"Server: http://localhost:{args.port}")
     if response_mode == "web":
         print(f"Web UI: http://localhost:{args.port}")
@@ -1087,8 +1187,12 @@ if __name__ == "__main__":
     print("\nThis server mimics OpenAI and Anthropic APIs for debugging purposes.")
     print("All requests will be logged to:")
     print("  - Console output")
-    print("  - openai_mock_requests.log")
+    print("  - dummy_ai_endpoint_requests.log")
     print("  - request_log.json")
+    
+    if advanced_mode:
+        print("\n⚡ ADVANCED MODE ENABLED ⚡")
+        print("Raw HTTP requests will be displayed for each incoming request.")
     if response_mode == "cli":
         print("\nYou will be prompted to provide responses for each request.")
     else:
