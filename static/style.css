@@ -6,86 +6,99 @@
 
 /* CSS Variables for theme colors */
 :root {
-    /* Light theme colors */
-    --bg-primary: #f5f7fa;
+    /* Aqua light theme */
+    --bg-primary: #e5e5e5;
     --bg-secondary: #ffffff;
-    --bg-tertiary: #f8f9fa;
-    --bg-hover: #f8f9fa;
-    --text-primary: #333333;
-    --text-secondary: #666666;
-    --text-muted: #999999;
-    --text-heading: #2c3e50;
-    --text-label: #555555;
-    --border-primary: #e0e0e0;
-    --border-secondary: #dee2e6;
-    --border-dashed: #dee2e6;
-    --shadow: rgba(0, 0, 0, 0.1);
-    --status-connected: #27ae60;
-    --status-disconnected: #e74c3c;
-    --link-color: #0066cc;
-    --btn-primary-bg: #0066cc;
-    --btn-primary-hover: #0052a3;
-    --btn-secondary-bg: #6c757d;
-    --btn-secondary-hover: #5a6268;
-    --code-bg: #f0f0f0;
-    --message-bg: #f5f5f5;
-    --tool-bg: #f9f9f9;
-    --warning-bg: #fff3cd;
-    --warning-border: #ffeaa7;
-    
-    /* New button gradient colors */
-    --gradient-primary-start: #667eea;
-    --gradient-primary-end: #764ba2;
-    --gradient-secondary-start: #6c757d;
-    --gradient-secondary-end: #5a6268;
-    --gradient-error-start: #e74c3c;
-    --gradient-error-end: #c0392b;
-    --gradient-success-start: #27ae60;
-    --gradient-success-end: #229954;
+    --bg-tertiary: #f7f7f7;
+    --bg-hover: #dcdcdc;
+    --text-primary: #000000;
+    --text-secondary: #2e2e2e;
+    --text-muted: #6e6e6e;
+    --text-heading: #000000;
+    --text-label: #3a3a3a;
+    --border-primary: #b5b5b5;
+    --border-secondary: #c1c1c1;
+    --border-dashed: #b5b5b5;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --status-connected: #4cd964;
+    --status-disconnected: #ff3b30;
+    --link-color: #0a84ff;
+    --btn-primary-bg: #0a84ff;
+    --btn-primary-hover: #006de6;
+    --btn-secondary-bg: #e0e0e0;
+    --btn-secondary-hover: #cfcfcf;
+    --code-bg: #f4f4f4;
+    --message-bg: #fbfbfb;
+    --tool-bg: #ffffff;
+    --warning-bg: #fff9d6;
+    --warning-border: #ffe58f;
+
+    /* Aqua gradients */
+    --gradient-primary-start: #6ba6ff;
+    --gradient-primary-end: #006de6;
+    --gradient-secondary-start: #f6f6f6;
+    --gradient-secondary-end: #dcdcdc;
+    --gradient-error-start: #ff5f56;
+    --gradient-error-end: #d70015;
+    --gradient-success-start: #4cd964;
+    --gradient-success-end: #0bb20c;
+
+    --pinstripe-light: #e0e0e0;
+    --pinstripe-dark: #d5d5d5;
+    --titlebar-light: #f6f6f6;
+    --titlebar-dark: #cfcfcf;
+    --dock-bg: rgba(255, 255, 255, 0.75);
+    --dock-border: rgba(0, 0, 0, 0.2);
 }
 
 /* Dark theme colors */
 [data-theme="dark"] {
-    --bg-primary: #1a1a1a;
-    --bg-secondary: #2d2d2d;
-    --bg-tertiary: #383838;
-    --bg-hover: #404040;
-    --text-primary: #e0e0e0;
-    --text-secondary: #b0b0b0;
-    --text-muted: #808080;
-    --text-heading: #f0f0f0;
-    --text-label: #c0c0c0;
-    --border-primary: #404040;
-    --border-secondary: #505050;
-    --border-dashed: #505050;
-    --shadow: rgba(0, 0, 0, 0.3);
-    --status-connected: #4ade80;
-    --status-disconnected: #f87171;
-    --link-color: #60a5fa;
-    --btn-primary-bg: #3b82f6;
-    --btn-primary-hover: #2563eb;
-    --btn-secondary-bg: #6b7280;
-    --btn-secondary-hover: #4b5563;
-    --code-bg: #2a2a2a;
-    --message-bg: #333333;
-    --tool-bg: #2a2a2a;
-    --warning-bg: #44403c;
-    --warning-border: #78716c;
-    
+    --bg-primary: #1c1c1e;
+    --bg-secondary: #2c2c2e;
+    --bg-tertiary: #3a3a3c;
+    --bg-hover: #48484a;
+    --text-primary: #f2f2f7;
+    --text-secondary: #d1d1d6;
+    --text-muted: #8e8e93;
+    --text-heading: #ffffff;
+    --text-label: #cacace;
+    --border-primary: #3a3a3c;
+    --border-secondary: #48484a;
+    --border-dashed: #48484a;
+    --shadow: rgba(0, 0, 0, 0.5);
+    --status-connected: #30d158;
+    --status-disconnected: #ff453a;
+    --link-color: #0a84ff;
+    --btn-primary-bg: #0a84ff;
+    --btn-primary-hover: #007aff;
+    --btn-secondary-bg: #636366;
+    --btn-secondary-hover: #525255;
+    --code-bg: #2c2c2e;
+    --message-bg: #3a3a3c;
+    --tool-bg: #2c2c2e;
+    --warning-bg: #4a4a4a;
+    --warning-border: #636366;
+
     /* Dark theme button gradients */
-    --gradient-primary-start: #60a5fa;
-    --gradient-primary-end: #3b82f6;
-    --gradient-secondary-start: #6b7280;
-    --gradient-secondary-end: #4b5563;
-    --gradient-error-start: #f87171;
-    --gradient-error-end: #ef4444;
-    --gradient-success-start: #4ade80;
-    --gradient-success-end: #22c55e;
+    --gradient-primary-start: #0a84ff;
+    --gradient-primary-end: #0063e0;
+    --gradient-secondary-start: #636366;
+    --gradient-secondary-end: #525255;
+    --gradient-error-start: #ff453a;
+    --gradient-error-end: #d70015;
+    --gradient-success-start: #30d158;
+    --gradient-success-end: #00b894;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: var(--bg-primary);
+    font-family: 'Lucida Grande', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: repeating-linear-gradient(
+        0deg,
+        var(--pinstripe-light) 0px,
+        var(--pinstripe-light) 1px,
+        var(--pinstripe-dark) 1px,
+        var(--pinstripe-dark) 2px
+    );
     color: var(--text-primary);
     line-height: 1.6;
     transition: background-color 0.3s ease, color 0.3s ease;
@@ -94,6 +107,110 @@ body {
 .container {
     max-width: 1200px;
     margin: 0 auto;
+    padding: 20px;
+}
+
+/* Mac-style window layout */
+.mac-window {
+    max-width: 1200px;
+    margin: 60px auto;
+    border: 1px solid var(--border-primary);
+    border-radius: 16px;
+    background: var(--bg-secondary);
+    box-shadow: 0 30px 60px var(--shadow);
+    overflow: hidden;
+}
+
+.mac-menu-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    background:
+        repeating-linear-gradient(
+            -45deg,
+            rgba(255, 255, 255, 0.4) 0px,
+            rgba(255, 255, 255, 0.4) 1px,
+            rgba(255, 255, 255, 0) 1px,
+            rgba(255, 255, 255, 0) 3px
+        ),
+        linear-gradient(to bottom, var(--titlebar-light), var(--titlebar-dark));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    font-size: 13px;
+    user-select: none;
+    z-index: 1000;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6), 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.mac-menu-bar .menu-left,
+.mac-menu-bar .menu-right {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.mac-menu-bar .apple-logo {
+    font-size: 16px;
+}
+
+.mac-menu-bar .menu-item {
+    cursor: default;
+}
+
+ .title-bar {
+     height: 38px;
+     background:
+         repeating-linear-gradient(
+             -45deg,
+             rgba(255, 255, 255, 0.4) 0px,
+             rgba(255, 255, 255, 0.4) 1px,
+             rgba(255, 255, 255, 0) 1px,
+             rgba(255, 255, 255, 0) 3px
+         ),
+         linear-gradient(to bottom, var(--titlebar-light), var(--titlebar-dark));
+     position: relative;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     border-bottom: 1px solid var(--border-primary);
+ }
+
+.traffic-lights {
+    position: absolute;
+    left: 12px;
+    display: flex;
+    gap: 8px;
+}
+
+ .traffic-light {
+     width: 14px;
+     height: 14px;
+     border-radius: 50%;
+     box-shadow: 0 0 2px rgba(0, 0, 0, 0.6) inset, 0 0 1px rgba(0, 0, 0, 0.8);
+ }
+
+ .traffic-light.close {
+     background: radial-gradient(circle at 30% 30%, #ffb3b0, #ff5f56);
+ }
+ .traffic-light.minimize {
+     background: radial-gradient(circle at 30% 30%, #ffe3a0, #ffbd2e);
+ }
+ .traffic-light.maximize {
+     background: radial-gradient(circle at 30% 30%, #b6f1a9, #28c840);
+ }
+
+.title-bar-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.window-content {
+    background: var(--bg-primary);
     padding: 20px;
 }
 
@@ -267,12 +384,6 @@ header p {
     cursor: pointer;
 }
 
-.button-group {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 20px;
-}
 
 /* Modern Button Design System */
 .btn {
@@ -762,43 +873,34 @@ header p {
     word-break: break-word;
 }
 
-/* Theme toggle button - Premium glass effect */
+/* Theme toggle inside title bar */
 .theme-toggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50px;
-    padding: 12px 20px;
-    cursor: pointer;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 4px 8px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 1000;
-}
-
-[data-theme="dark"] .theme-toggle {
-    background: rgba(45, 45, 45, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    gap: 6px;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background 0.2s ease;
 }
 
 .theme-toggle:hover {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 [data-theme="dark"] .theme-toggle:hover {
-    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .theme-toggle-icon {
-    font-size: 20px;
+    font-size: 16px;
     transition: transform 0.3s ease;
 }
 
@@ -807,14 +909,9 @@ header p {
 }
 
 .theme-toggle-text {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 500;
     color: var(--text-primary);
-}
-
-/* Additional dark mode specific styles */
-[data-theme="dark"] .theme-toggle {
-    background: var(--bg-tertiary);
 }
 
 [data-theme="dark"] .image-content img {
@@ -844,18 +941,12 @@ header p {
     .main-content {
         grid-template-columns: 1fr;
     }
-    
+
     .status-bar {
         flex-direction: column;
         gap: 10px;
     }
-    
-    .theme-toggle {
-        top: 10px;
-        right: 10px;
-        padding: 8px 12px;
-    }
-    
+
     .theme-toggle-text {
         display: none;
     }
@@ -1403,4 +1494,62 @@ header p {
 
 .btn-primary:focus-visible {
     animation: pulse 1.5s infinite;
+}
+
+/* macOS X-style dock */
+.dock {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--dock-bg);
+    backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--dock-border);
+    display: flex;
+    gap: 20px;
+    z-index: 1000;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.dock-icon {
+    background: none;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: 'Lucida Grande', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.dock-icon .icon {
+    font-size: 32px;
+    margin-bottom: 4px;
+}
+
+.dock-icon:hover {
+    transform: scale(1.3);
+}
+
+.dock-icon.loading {
+    color: transparent;
+    position: relative;
+}
+
+.dock-icon.loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 16px;
+    left: 50%;
+    margin-left: -10px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spinner 0.8s linear infinite;
 }

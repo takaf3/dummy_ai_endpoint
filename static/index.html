@@ -7,13 +7,36 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- Theme Toggle Button -->
-    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
-        <span class="theme-toggle-icon" id="theme-icon">🌙</span>
-        <span class="theme-toggle-text" id="theme-text">Dark</span>
-    </button>
-    
-    <div class="container">
+    <div class="mac-menu-bar">
+        <div class="menu-left">
+            <span class="apple-logo"></span>
+            <span class="menu-item">Dummy AI Endpoint</span>
+            <span class="menu-item">File</span>
+            <span class="menu-item">Edit</span>
+            <span class="menu-item">View</span>
+            <span class="menu-item">Window</span>
+            <span class="menu-item">Help</span>
+        </div>
+        <div class="menu-right">
+            <span class="menu-item">12:00 PM</span>
+        </div>
+    </div>
+    <div class="mac-window">
+        <div class="title-bar">
+            <div class="traffic-lights">
+                <span class="traffic-light close"></span>
+                <span class="traffic-light minimize"></span>
+                <span class="traffic-light maximize"></span>
+            </div>
+            <div class="title-bar-title">Dummy AI Endpoint</div>
+            <!-- Theme Toggle Button -->
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                <span class="theme-toggle-icon" id="theme-icon">🌙</span>
+                <span class="theme-toggle-text" id="theme-text">Dark</span>
+            </button>
+        </div>
+        <div class="window-content">
+            <div class="container">
         <header>
             <h1>🤖 Dummy AI Endpoint</h1>
             <p>Intercept and control API responses in real-time</p>
@@ -78,12 +101,6 @@
                             <textarea id="embedding-custom-json" placeholder='[0.1, 0.2, 0.3, 0.4, 0.5]' rows="5"></textarea>
                         </div>
                     </div>
-                    <div class="button-group">
-                        <button id="send-response" class="btn btn-primary">Send Response</button>
-                        <button id="send-default" class="btn btn-primary">Send Default</button>
-                        <button id="send-error" class="btn btn-secondary">Send Error</button>
-                        <button id="send-429" class="btn btn-secondary">Send 429 (Rate Limit)</button>
-                    </div>
                     <div class="custom-error-section">
                         <h3>🚨 Custom Error Response</h3>
                         <div class="custom-error-controls">
@@ -99,20 +116,38 @@
                                 <label for="custom-error-detail">Error Detail:</label>
                                 <textarea id="custom-error-detail" placeholder="Detailed error description..." rows="3">The server encountered an error processing your request.</textarea>
                             </div>
-                            <div class="preset-buttons">
-                                <label>Quick Presets:</label>
-                                <div class="preset-button-group">
-                                    <button class="btn btn-preset" data-status="503" data-message="Service Unavailable" data-detail="The service is temporarily unavailable. Please try again later.">503 Service Unavailable</button>
-                                    <button class="btn btn-preset" data-status="502" data-message="Bad Gateway" data-detail="The server received an invalid response from an upstream server.">502 Bad Gateway</button>
-                                    <button class="btn btn-preset" data-status="500" data-message="Internal Server Error" data-detail="The server encountered an error processing your request.">500 Internal Error</button>
-                                    <button class="btn btn-preset" data-status="404" data-message="Not Found" data-detail="The requested resource was not found.">404 Not Found</button>
-                                    <button class="btn btn-preset" data-status="403" data-message="Forbidden" data-detail="Access to the requested resource is forbidden.">403 Forbidden</button>
-                                </div>
-                            </div>
-                            <button id="send-custom-error" class="btn btn-secondary">Send Custom Error</button>
+                    <div class="preset-buttons">
+                        <label>Quick Presets:</label>
+                        <div class="preset-button-group">
+                            <button class="btn btn-preset" data-status="503" data-message="Service Unavailable" data-detail="The service is temporarily unavailable. Please try again later.">503 Service Unavailable</button>
+                            <button class="btn btn-preset" data-status="502" data-message="Bad Gateway" data-detail="The server received an invalid response from an upstream server.">502 Bad Gateway</button>
+                            <button class="btn btn-preset" data-status="500" data-message="Internal Server Error" data-detail="The server encountered an error processing your request.">500 Internal Error</button>
+                            <button class="btn btn-preset" data-status="404" data-message="Not Found" data-detail="The requested resource was not found.">404 Not Found</button>
+                            <button class="btn btn-preset" data-status="403" data-message="Forbidden" data-detail="Access to the requested resource is forbidden.">403 Forbidden</button>
                         </div>
                     </div>
+                    <button id="send-custom-error" class="btn btn-secondary">Send Custom Error</button>
                 </div>
+            </div>
+            <div class="dock" id="action-dock">
+                <button id="send-response" class="dock-icon" title="Send Response">
+                    <span class="icon">📨</span>
+                    <span class="label">Send</span>
+                </button>
+                <button id="send-default" class="dock-icon" title="Send Default">
+                    <span class="icon">📦</span>
+                    <span class="label">Default</span>
+                </button>
+                <button id="send-error" class="dock-icon" title="Send Error">
+                    <span class="icon">⚠️</span>
+                    <span class="label">Error</span>
+                </button>
+                <button id="send-429" class="dock-icon" title="Send 429">
+                    <span class="icon">🚫</span>
+                    <span class="label">429</span>
+                </button>
+            </div>
+        </div>
                 <div id="waiting-for-request" class="info-box">
                     <p class="waiting-message">No active request</p>
                 </div>
@@ -129,6 +164,8 @@
             </div>
             <div id="history-list" class="history-list">
                 <p class="no-history">No requests yet</p>
+            </div>
+        </div>
             </div>
         </div>
     </div>
